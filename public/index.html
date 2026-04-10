@@ -19,8 +19,6 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg)}
 body{font-family:var(--font);color:var(--text);display:flex;flex-direction:column}
-
-/* AUTH SCREEN */
 #auth-screen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
 #auth-screen.hidden{display:none}
 .auth-logo{width:64px;height:64px;border-radius:18px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:16px;box-shadow:0 6px 24px rgba(124,106,247,0.5)}
@@ -31,44 +29,35 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 .auth-input::placeholder{color:var(--text3)}
 .auth-input:focus{border-color:rgba(124,106,247,0.5)}
 .auth-btn{width:100%;padding:14px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:white;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font);margin-top:4px}
-.auth-btn:active{opacity:0.85}
 .auth-switch{font-size:13px;color:var(--text2);text-align:center;margin-top:12px}
 .auth-switch span{color:var(--accent2);cursor:pointer;font-weight:500}
 .auth-error{font-size:13px;color:var(--red);text-align:center;min-height:18px}
-
-/* SPACE SELECTOR */
 #space-bar{display:flex;padding:8px 10px;gap:5px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;scrollbar-width:none;align-items:center}
 #space-bar::-webkit-scrollbar{display:none}
 .space-pill{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid var(--border2);cursor:pointer;color:var(--text2);background:transparent;transition:all 0.2s;flex-shrink:0;font-family:var(--font)}
 .space-pill.active{background:var(--accent-dim);color:var(--accent2);border-color:rgba(124,106,247,0.3)}
-.space-pill.personal{border-color:rgba(78,203,141,0.3)}
 .space-pill.personal.active{background:var(--green-dim);color:var(--green);border-color:rgba(78,203,141,0.5)}
-.space-pill.business{border-color:rgba(245,166,35,0.3)}
 .space-pill.business.active{background:rgba(245,166,35,0.12);color:var(--amber);border-color:rgba(245,166,35,0.5)}
 #add-space-btn{width:28px;height:28px;border-radius:50%;background:var(--surface);border:1px solid var(--border2);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
-/* HEADER */
-#header{padding:11px 14px 9px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+#header{padding:11px 14px 9px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
 #logo{width:34px;height:34px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 3px 12px rgba(124,106,247,0.4)}
-#header-info{flex:1}
+#header-info{flex:1;min-width:0}
 #header-info h1{font-family:var(--font-mono);font-size:15px;font-weight:700;letter-spacing:-0.5px;color:var(--text)}
-#header-info p{font-size:10px;color:var(--text2)}
-#header-actions{display:flex;gap:5px;align-items:center}
-.hdr-btn{background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-size:12px;padding:5px 9px;cursor:pointer;font-family:var(--font)}
-#tts-btn{font-size:12px;padding:5px 9px;border-radius:7px;cursor:pointer;border:1px solid rgba(245,166,35,0.3);background:rgba(245,166,35,0.1);color:var(--amber);font-family:var(--font)}
+#header-info p{font-size:10px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#header-actions{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.hdr-btn{background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-size:12px;padding:5px 8px;cursor:pointer;font-family:var(--font);white-space:nowrap}
+#tts-btn{border-radius:7px;padding:5px 8px;cursor:pointer;border:1px solid rgba(245,166,35,0.3);background:rgba(245,166,35,0.1);color:var(--amber);font-family:var(--font);font-size:12px}
 #tts-btn.off{border-color:var(--border2);background:var(--surface);color:var(--text3)}
-#status{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green);margin-left:2px}
+#handsfree-btn{border-radius:7px;padding:5px 8px;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-family:var(--font);font-size:12px;transition:all 0.2s}
+#handsfree-btn.active{border-color:rgba(78,203,141,0.5);background:var(--green-dim);color:var(--green)}
+#status{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green)}
 #status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-
-/* TABS */
 #tabs{display:flex;padding:7px 9px;gap:4px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
 #tabs::-webkit-scrollbar{display:none}
 .tab{display:flex;align-items:center;gap:4px;padding:6px 11px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent;cursor:pointer;color:var(--text2);background:transparent;transition:all 0.2s;flex-shrink:0}
 .tab.active{background:var(--accent-dim);color:var(--accent2);border-color:rgba(124,106,247,0.25)}
 .tab span{font-size:13px}
-
-/* VIEWS */
 #views{flex:1;overflow:hidden;position:relative;background:var(--bg)}
 .view{position:absolute;inset:0;overflow-y:auto;display:none;padding-bottom:85px;background:var(--bg)}
 .view.active{display:block}
@@ -89,12 +78,12 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 #chat-input{flex:1;padding:10px 13px;border-radius:20px;background:var(--surface);border:1px solid var(--border2);color:var(--text);font-size:14px;font-family:var(--font);font-weight:300;outline:none;resize:none;max-height:110px;line-height:1.4}
 #chat-input::placeholder{color:var(--text3)}
 #chat-input:focus{border-color:rgba(124,106,247,0.4)}
-.icon-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;transition:all 0.2s}
 #send-btn{background:var(--accent);box-shadow:0 3px 10px rgba(124,106,247,0.35)}
 #send-btn:disabled{opacity:0.35;box-shadow:none}
-#mic-btn,#ticket-btn{background:var(--surface);border:1px solid var(--border2)}
-
-/* LISTS */
+#mic-btn{background:var(--surface);border:1px solid var(--border2)}
+#mic-btn.listening{background:var(--red);border-color:var(--red)}
+#ticket-btn{background:var(--surface);border:1px solid var(--border2)}
 .section-header{display:flex;align-items:center;justify-content:space-between;padding:16px 15px 9px}
 .section-title{font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
 .space-tag{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:500}
@@ -142,8 +131,6 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 .save-note-btn{padding:7px 13px;border-radius:var(--radius-sm);background:var(--accent-dim);border:1px solid rgba(124,106,247,0.25);color:var(--accent2);font-size:13px;cursor:pointer;font-family:var(--font)}
 .note-body-input{flex:1;padding:13px;background:none;border:none;outline:none;font-size:15px;color:var(--text);font-family:var(--font);font-weight:300;resize:none;line-height:1.65}
 .note-body-input::placeholder{color:var(--text3)}
-
-/* MODALS */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:50;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.25s}
 .modal-overlay.open{opacity:1;pointer-events:all}
 .modal{width:100%;background:var(--bg2);border-radius:20px 20px 0 0;padding:20px 17px 36px;transform:translateY(40px);transition:transform 0.25s}
@@ -159,10 +146,8 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 .modal-cancel{flex:1;padding:12px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border2);color:var(--text2);font-size:14px;cursor:pointer;font-family:var(--font)}
 .modal-save{flex:2;padding:12px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:white;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font)}
 .modal-type-row{display:flex;gap:8px;margin-bottom:12px}
-.type-btn{flex:1;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;font-family:var(--font);text-align:center;transition:all 0.15s}
+.type-btn{flex:1;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;font-family:var(--font);text-align:center}
 .type-btn.active{border-color:rgba(124,106,247,0.4);background:var(--accent-dim);color:var(--accent2)}
-
-/* INVITE PANEL */
 #invite-panel{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:60;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.25s}
 #invite-panel.open{opacity:1;pointer-events:all}
 #invite-box{width:100%;background:var(--bg2);border-radius:20px 20px 0 0;padding:20px 17px 38px;transform:translateY(50px);transition:transform 0.25s}
@@ -171,8 +156,6 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 #invite-box p{font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5}
 #invite-code{font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--accent2);letter-spacing:7px;text-align:center;padding:16px;background:var(--surface);border-radius:var(--radius-sm);margin-bottom:12px;cursor:pointer}
 #invite-close{width:100%;padding:12px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border2);color:var(--text2);font-size:14px;cursor:pointer;font-family:var(--font)}
-
-/* TICKET */
 #ticket-panel{position:fixed;inset:0;background:var(--bg);z-index:70;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 0.2s}
 #ticket-panel.open{opacity:1;pointer-events:all}
 #ticket-header{padding:14px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border);flex-shrink:0}
@@ -196,8 +179,10 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 #mic-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;opacity:0;pointer-events:none;transition:opacity 0.2s}
 #mic-overlay.show{opacity:1;pointer-events:all}
 #mic-wave{width:86px;height:86px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:34px;animation:mw 1s infinite}
-@keyframes mw{0%{box-shadow:0 0 0 0 rgba(240,107,107,0.5)}70%{box-shadow:0 0 0 26px rgba(240,107,107,0)}100%{box-shadow:0 0 0 0 rgba(240,107,107,0)}}}
-#mic-text{font-size:14px;color:var(--text)}
+@keyframes mw{0%{box-shadow:0 0 0 0 rgba(240,107,107,0.5)}70%{box-shadow:0 0 0 26px rgba(240,107,107,0)}100%{box-shadow:0 0 0 0 rgba(240,107,107,0)}}
+#mic-wave.green{background:var(--green);animation:mwg 1s infinite}
+@keyframes mwg{0%{box-shadow:0 0 0 0 rgba(78,203,141,0.5)}70%{box-shadow:0 0 0 26px rgba(78,203,141,0)}100%{box-shadow:0 0 0 0 rgba(78,203,141,0)}}
+#mic-status{font-size:14px;color:var(--text)}
 #mic-interim{font-size:13px;color:var(--text2);min-height:18px;text-align:center;padding:0 34px}
 #mic-cancel{padding:10px 24px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-size:14px;cursor:pointer;font-family:var(--font)}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite}
@@ -210,52 +195,33 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 </style>
 </head>
 <body>
-
-<!-- LOADING -->
-<div class="loading-overlay" id="loading">
-  <div class="loading-logo">🤝</div>
-  <div class="loading-text">Cargando Socio...</div>
-</div>
-
-<!-- AUTH SCREEN -->
+<div class="loading-overlay" id="loading"><div class="loading-logo">🤝</div><div class="loading-text">Cargando Socio...</div></div>
 <div id="auth-screen">
   <div class="auth-logo">🤝</div>
   <div class="auth-title">Socio</div>
   <div class="auth-sub">Tu asistente personal de confianza</div>
   <div class="auth-form">
     <div class="auth-error" id="auth-error"></div>
-    <div id="register-name-wrap" style="display:none">
-      <input class="auth-input" id="auth-name" placeholder="Tu nombre" style="margin-bottom:12px">
-    </div>
+    <div id="register-name-wrap" style="display:none"><input class="auth-input" id="auth-name" placeholder="Tu nombre" style="margin-bottom:0"></div>
     <input class="auth-input" id="auth-email" type="email" placeholder="Email" autocomplete="email">
     <input class="auth-input" id="auth-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
     <button class="auth-btn" id="auth-submit">Entrar</button>
     <div class="auth-switch" id="auth-switch">¿No tienes cuenta? <span id="auth-toggle">Regístrate</span></div>
   </div>
 </div>
-
-<!-- MAIN APP -->
 <div id="app" style="display:none;flex-direction:column;height:100%">
-
   <div id="header">
     <div id="logo">🤝</div>
-    <div id="header-info">
-      <h1>Socio</h1>
-      <p id="space-label">Cargando...</p>
-    </div>
+    <div id="header-info"><h1>Socio</h1><p id="space-label">...</p></div>
     <div id="header-actions">
-      <button id="tts-btn">🔊</button>
-      <button class="hdr-btn" id="invite-btn" title="Invitar">👥</button>
+      <button id="tts-btn" onclick="toggleTts()">🔊</button>
+      <button id="handsfree-btn" onclick="toggleHandsFree()">🎙️ libre</button>
+      <button class="hdr-btn" id="invite-btn">👥</button>
       <button class="hdr-btn" id="logout-btn">↩</button>
     </div>
     <div id="status"><div id="status-dot"></div></div>
   </div>
-
-  <div id="space-bar">
-    <!-- Spaces rendered here -->
-    <button id="add-space-btn" title="Nuevo espacio">+</button>
-  </div>
-
+  <div id="space-bar"><button id="add-space-btn">+</button></div>
   <div id="tabs">
     <button class="tab active" data-view="chat"><span>💬</span> Chat</button>
     <button class="tab" data-view="compra"><span>🛒</span> Compra</button>
@@ -263,7 +229,6 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
     <button class="tab" data-view="agenda"><span>📅</span> Agenda</button>
     <button class="tab" data-view="notas"><span>📝</span> Notas</button>
   </div>
-
   <div id="views">
     <div class="view active" id="chat-view" style="display:flex;flex-direction:column;">
       <div id="messages"></div>
@@ -271,9 +236,7 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
         <textarea id="chat-input" placeholder="Habla con Socio..." rows="1"></textarea>
         <button class="icon-btn" id="ticket-btn">📷</button>
         <button class="icon-btn" id="mic-btn">🎙️</button>
-        <button class="icon-btn" id="send-btn" disabled>
-          <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M16 9L2 2.5l3.5 6.5-3.5 6.5L16 9z" fill="white"/></svg>
-        </button>
+        <button class="icon-btn" id="send-btn" disabled><svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M16 9L2 2.5l3.5 6.5-3.5 6.5L16 9z" fill="white"/></svg></button>
       </div>
     </div>
     <div class="view" id="compra-view">
@@ -297,11 +260,8 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
       <div id="notas-list"></div>
     </div>
   </div>
-
   <button class="fab" id="fab" style="display:none">+</button>
 </div>
-
-<!-- Modal evento -->
 <div class="modal-overlay" id="event-modal">
   <div class="modal">
     <h3>Nuevo evento</h3>
@@ -314,8 +274,6 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
     <div class="modal-actions"><button class="modal-cancel" id="modal-cancel">Cancelar</button><button class="modal-save" id="modal-save">Guardar</button></div>
   </div>
 </div>
-
-<!-- Modal nuevo espacio -->
 <div class="modal-overlay" id="space-modal">
   <div class="modal">
     <h3>Nuevo espacio</h3>
@@ -329,33 +287,24 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
     <div class="modal-actions"><button class="modal-cancel" id="space-modal-cancel">Cancelar</button><button class="modal-save" id="space-modal-save">Crear / Unirse</button></div>
   </div>
 </div>
-
-<!-- Panel invitar -->
 <div id="invite-panel">
   <div id="invite-box">
     <h3>👥 Invitar al espacio</h3>
-    <p>Comparte este código con tu pareja, familia o equipo para que se unan a <strong id="invite-space-name"></strong>.</p>
-    <div id="invite-code" title="Toca para copiar">------</div>
+    <p>Comparte este código con tu pareja, familia o equipo para unirse a <strong id="invite-space-name"></strong>.</p>
+    <div id="invite-code">------</div>
     <button id="invite-close">Cerrar</button>
   </div>
 </div>
-
-<!-- Ticket -->
 <div id="ticket-panel">
   <div id="ticket-header"><button id="ticket-back">←</button><h3>📷 Foto al ticket</h3></div>
   <div id="ticket-body">
     <img id="ticket-preview" alt="ticket">
     <div id="ticket-placeholder"><div>🧾</div><p>Haz una foto al ticket<br>y Socio apuntará los productos</p></div>
     <div id="ticket-result"></div>
-    <div id="ticket-actions">
-      <button id="ticket-camera-btn">📷 Hacer foto</button>
-      <button id="ticket-analyze-btn">✨ Analizar</button>
-    </div>
+    <div id="ticket-actions"><button id="ticket-camera-btn">📷 Hacer foto</button><button id="ticket-analyze-btn">✨ Analizar</button></div>
   </div>
   <input type="file" id="file-input" accept="image/*" capture="environment">
 </div>
-
-<!-- Note editor -->
 <div class="note-editor" id="note-editor">
   <div class="note-editor-header">
     <button class="back-btn" id="note-back">←</button>
@@ -364,39 +313,22 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
   </div>
   <textarea class="note-body-input" id="note-body-input" placeholder="Escribe aquí..."></textarea>
 </div>
-
 <div id="mic-overlay">
   <div id="mic-wave">🎙️</div>
-  <div id="mic-text">Escuchando...</div>
+  <div id="mic-status">Escuchando...</div>
   <div id="mic-interim"></div>
   <button id="mic-cancel">Cancelar</button>
 </div>
-
 <div class="toast" id="toast"></div>
-
 <script>
-// =====================
-// CONFIG
-// =====================
-const API_BASE = ''; // Same origin - backend serves frontend
+const API_BASE='';
+let token=localStorage.getItem('socio_token');
+let currentUser=null,currentSpaceId=null;
+let spaceData={compra:[],tareas:[],agenda:[],notas:[],members:[],inviteCode:null};
+let pollTimer=null,chatHistory=[],currentTab='chat',editNoteId=null,ticketData=null;
+let ttsOn=localStorage.getItem('socio_tts')!=='off';
+let handsFreeOn=false,hfPaused=false,hfRestartTimer=null,isListening=false;
 
-// =====================
-// STATE
-// =====================
-let token = localStorage.getItem('socio_token');
-let currentUser = null;
-let currentSpaceId = null;
-let spaceData = { compra:[], tareas:[], agenda:[], notas:[], members:[], inviteCode:null };
-let pollTimer = null;
-let chatHistory = [];
-let currentTab = 'chat';
-let editNoteId = null;
-let ticketData = null;
-let ttsOn = localStorage.getItem('socio_tts') !== 'off';
-
-// =====================
-// UTILS
-// =====================
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function toast(msg,dur=2400){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),dur);}
 async function api(path,method='GET',body=null){
@@ -409,19 +341,16 @@ async function api(path,method='GET',body=null){
   return data;
 }
 
-// =====================
 // AUTH
-// =====================
 let isRegister=false;
-document.getElementById('auth-toggle').onclick=()=>{
+document.getElementById('auth-toggle').onclick=function(){
   isRegister=!isRegister;
   document.getElementById('register-name-wrap').style.display=isRegister?'block':'none';
   document.getElementById('auth-submit').textContent=isRegister?'Crear cuenta':'Entrar';
   document.getElementById('auth-switch').innerHTML=isRegister?'¿Ya tienes cuenta? <span id="auth-toggle">Inicia sesión</span>':'¿No tienes cuenta? <span id="auth-toggle">Regístrate</span>';
-  document.getElementById('auth-toggle').onclick=arguments.callee.caller;
+  document.getElementById('auth-toggle').onclick=this;
   document.getElementById('auth-error').textContent='';
 };
-
 document.getElementById('auth-submit').onclick=async()=>{
   const email=document.getElementById('auth-email').value.trim();
   const pass=document.getElementById('auth-pass').value;
@@ -432,123 +361,90 @@ document.getElementById('auth-submit').onclick=async()=>{
   document.getElementById('auth-submit').innerHTML='<span class="spinner"></span>';
   try{
     let data;
-    if(isRegister){
-      if(!name){errEl.textContent='Pon tu nombre';document.getElementById('auth-submit').textContent='Crear cuenta';return;}
-      data=await api('/api/auth/register','POST',{name,email,password:pass});
-    }else{
-      data=await api('/api/auth/login','POST',{email,password:pass});
-    }
-    token=data.token;localStorage.setItem('socio_token',token);
-    currentUser=data.user;
-    startApp();
+    if(isRegister){if(!name){errEl.textContent='Pon tu nombre';document.getElementById('auth-submit').textContent='Crear cuenta';return;}data=await api('/api/auth/register','POST',{name,email,password:pass});}
+    else{data=await api('/api/auth/login','POST',{email,password:pass});}
+    token=data.token;localStorage.setItem('socio_token',token);currentUser=data.user;startApp();
   }catch(e){errEl.textContent=e.message;document.getElementById('auth-submit').textContent=isRegister?'Crear cuenta':'Entrar';}
 };
-['auth-email','auth-pass','auth-name'].forEach(id=>{
-  const el=document.getElementById(id);
-  if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('auth-submit').click();});
-});
-
+['auth-email','auth-pass','auth-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('auth-submit').click();});});
 document.getElementById('logout-btn').onclick=()=>{
   localStorage.removeItem('socio_token');token=null;currentUser=null;
-  clearInterval(pollTimer);
+  clearInterval(pollTimer);stopListen();handsFreeOn=false;updateHFBtn();
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').classList.remove('hidden');
 };
 
-// =====================
-// APP INIT
-// =====================
+// APP
 async function startApp(){
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('app').style.display='flex';
   renderSpaces();
-  const firstSpace=currentUser.spaces[0];
-  if(firstSpace)await switchSpace(firstSpace.id);
+  const first=currentUser.spaces[0];
+  if(first)await switchSpace(first.id);
   document.getElementById('loading').classList.add('hidden');
-  addMsg(`¡Buenas, ${currentUser.name.split(' ')[0]}! 🤝 Estás en el espacio <strong>${getSpaceName()}</strong>. ¿Qué necesitas?`,'bot',false,true);
-  addSuggs(['Apunta mantequilla y leche','Tarea: llamar al banco','Cita médica mañana 10h','¿Qué tengo pendiente?']);
+  addMsg(`¡Buenas, ${currentUser.name.split(' ')[0]}! 🤝 Estás en <strong>${getSpaceName()}</strong>.<br>Pulsa <strong>🎙️ libre</strong> para el modo manos libres — escucha continua sin tocar nada.`,'bot',false,true);
+  addSuggs(['Apunta mantequilla y leche','Cita médica mañana 10h','¿Qué tengo pendiente?','Añade tarea: llamar al banco']);
 }
 
-function getSpaceName(){const sp=currentUser.spaces.find(s=>s.id===currentSpaceId);return sp?sp.name:'';}
-function getSpaceType(){const sp=currentUser.spaces.find(s=>s.id===currentSpaceId);return sp?sp.type:'personal';}
+function getSpaceName(){const s=currentUser?.spaces.find(x=>x.id===currentSpaceId);return s?s.name:'';}
+function getSpaceType(){const s=currentUser?.spaces.find(x=>x.id===currentSpaceId);return s?s.type:'personal';}
 
 function renderSpaces(){
   const bar=document.getElementById('space-bar');
   const addBtn=document.getElementById('add-space-btn');
-  bar.innerHTML='';
-  bar.appendChild(addBtn);
+  bar.innerHTML='';bar.appendChild(addBtn);
+  const icons={personal:'🏠',family:'👨‍👩‍👧',business:'💼'};
   currentUser.spaces.forEach(sp=>{
-    const icons={personal:'🏠',family:'👨‍👩‍👧',business:'💼'};
     const btn=document.createElement('button');
     btn.className=`space-pill ${sp.type}${sp.id===currentSpaceId?' active':''}`;
     btn.textContent=`${icons[sp.type]||''} ${sp.name}`;
     btn.onclick=()=>switchSpace(sp.id);
     bar.insertBefore(btn,addBtn);
   });
-  const spaceType=getSpaceType();
   document.getElementById('space-label').textContent=getSpaceName();
   ['compra','tareas','agenda','notas'].forEach(t=>{
     const tag=document.getElementById(`${t}-space-tag`);
-    if(tag){tag.textContent=getSpaceName();tag.className=`space-tag ${spaceType}`;}
+    if(tag){tag.textContent=getSpaceName();tag.className=`space-tag ${getSpaceType()}`;}
   });
 }
 
-async function switchSpace(spaceId){
-  currentSpaceId=spaceId;
-  clearInterval(pollTimer);
-  chatHistory=[];
-  renderSpaces();
-  await loadSpaceData();
-  renderAll();
+async function switchSpace(id){
+  currentSpaceId=id;clearInterval(pollTimer);chatHistory=[];
+  renderSpaces();await loadSpaceData();renderAll();
   pollTimer=setInterval(async()=>{await loadSpaceData();if(currentTab!=='chat')renderAll();},5000);
 }
+async function loadSpaceData(){try{const d=await api(`/api/data/${currentSpaceId}`);spaceData={...d};}catch(e){}}
+function renderAll(){renderList('compra');renderList('tareas');renderAgenda();renderNotas();}
 
-async function loadSpaceData(){
-  try{const d=await api(`/api/data/${currentSpaceId}`);spaceData={...d};}catch(e){}
-}
-
-function renderAll(){
-  renderList('compra');renderList('tareas');renderAgenda();renderNotas();
-}
-
-// =====================
 // SPACES MODAL
-// =====================
-let selectedSpaceType='family';
+let selType='family';
 document.getElementById('add-space-btn').onclick=()=>document.getElementById('space-modal').classList.add('open');
 document.getElementById('space-modal-cancel').onclick=()=>document.getElementById('space-modal').classList.remove('open');
-document.querySelectorAll('.type-btn').forEach(btn=>{
-  btn.onclick=()=>{document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selectedSpaceType=btn.dataset.type;};
-});
+document.querySelectorAll('.type-btn').forEach(btn=>{btn.onclick=()=>{document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selType=btn.dataset.type;};});
 document.getElementById('space-modal-save').onclick=async()=>{
   const code=document.getElementById('space-join-code').value.trim().toUpperCase();
   const name=document.getElementById('space-name').value.trim();
   try{
     let data;
-    if(code){data=await api('/api/auth/space/join','POST',{code});}
-    else{if(!name){toast('Pon un nombre');return;}data=await api('/api/auth/space','POST',{name,type:selectedSpaceType});}
+    if(code)data=await api('/api/auth/space/join','POST',{code});
+    else{if(!name){toast('Pon un nombre');return;}data=await api('/api/auth/space','POST',{name,type:selType});}
     currentUser.spaces=data.spaces;
     document.getElementById('space-modal').classList.remove('open');
     document.getElementById('space-name').value='';document.getElementById('space-join-code').value='';
-    renderSpaces();
-    if(data.spaceId)await switchSpace(data.spaceId);
-    toast(code?'¡Te has unido al espacio! 🎉':'Espacio creado 🎉');
+    renderSpaces();if(data.spaceId)await switchSpace(data.spaceId);
+    toast(code?'¡Unido al espacio! 🎉':'Espacio creado 🎉');
   }catch(e){toast(e.message);}
 };
-
-// Invite
 document.getElementById('invite-btn').onclick=()=>{
   const sp=currentUser.spaces.find(s=>s.id===currentSpaceId);
   document.getElementById('invite-space-name').textContent=sp?.name||'';
   document.getElementById('invite-code').textContent=spaceData.inviteCode||'Sin código';
   document.getElementById('invite-panel').classList.add('open');
 };
-document.getElementById('invite-code').onclick=()=>{navigator.clipboard?.writeText(spaceData.inviteCode).then(()=>toast('Código copiado ✓'));};
+document.getElementById('invite-code').onclick=()=>navigator.clipboard?.writeText(spaceData.inviteCode).then(()=>toast('Código copiado ✓'));
 document.getElementById('invite-close').onclick=()=>document.getElementById('invite-panel').classList.remove('open');
 
-// =====================
 // TABS
-// =====================
 document.querySelectorAll('.tab').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
@@ -563,9 +459,7 @@ document.querySelectorAll('.tab').forEach(btn=>{
   });
 });
 
-// =====================
-// RENDER LISTS
-// =====================
+// LISTS
 function renderList(type){
   const list=spaceData[type]||[];
   const el=document.getElementById(type+'-list');
@@ -576,53 +470,30 @@ function renderList(type){
     <button class="item-del" onclick="event.stopPropagation();delItem('${type}','${item.id}')">✕</button>
   </div>`).join('');
 }
-
-async function toggleItem(type,id,done){
-  try{await api(`/api/data/${currentSpaceId}/${type}/${id}`,'PATCH',{done});await loadSpaceData();renderList(type);}catch(e){toast('Error');}
-}
-async function delItem(type,id){
-  try{await api(`/api/data/${currentSpaceId}/${type}/${id}`,'DELETE');await loadSpaceData();renderList(type);}catch(e){toast('Error');}
-}
-async function addItem(type,name){
-  if(!name.trim())return false;
-  try{await api(`/api/data/${currentSpaceId}/${type}`,'POST',{name});await loadSpaceData();renderList(type);return true;}
-  catch(e){toast(e.message);return false;}
-}
-async function clearDone(type){
-  try{await api(`/api/data/${currentSpaceId}/${type}?done=true`,'DELETE');await loadSpaceData();renderList(type);toast('Listo ✓');}catch(e){}
-}
-
+async function toggleItem(type,id,done){try{await api(`/api/data/${currentSpaceId}/${type}/${id}`,'PATCH',{done});await loadSpaceData();renderList(type);}catch(e){toast('Error');}}
+async function delItem(type,id){try{await api(`/api/data/${currentSpaceId}/${type}/${id}`,'DELETE');await loadSpaceData();renderList(type);}catch(e){toast('Error');}}
+async function addItem(type,name){if(!name.trim())return false;try{await api(`/api/data/${currentSpaceId}/${type}`,'POST',{name});await loadSpaceData();renderList(type);return true;}catch(e){toast(e.message);return false;}}
+async function clearDone(type){try{await api(`/api/data/${currentSpaceId}/${type}?done=true`,'DELETE');await loadSpaceData();renderList(type);toast('Listo ✓');}catch(e){}}
 document.getElementById('compra-add-btn').onclick=async()=>{const i=document.getElementById('compra-input');if(await addItem('compra',i.value)){i.value='';toast('Añadido 🛒');}};
 document.getElementById('compra-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('compra-add-btn').click();});
 document.getElementById('tareas-add-btn').onclick=async()=>{const i=document.getElementById('tareas-input');if(await addItem('tareas',i.value)){i.value='';toast('Tarea añadida ✅');}};
 document.getElementById('tareas-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('tareas-add-btn').click();});
 
-// =====================
 // AGENDA
-// =====================
 function renderAgenda(){
-  const el=document.getElementById('agenda-list');
-  const list=spaceData.agenda||[];
+  const el=document.getElementById('agenda-list');const list=spaceData.agenda||[];
   if(!list.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><p>Sin eventos. ¡Añade uno!</p></div>';return;}
   const sorted=[...list].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  const today=new Date().toISOString().slice(0,10);
-  const groups={};sorted.forEach(ev=>{if(!groups[ev.date])groups[ev.date]=[];groups[ev.date].push(ev);});
+  const today=new Date().toISOString().slice(0,10);const groups={};
+  sorted.forEach(ev=>{if(!groups[ev.date])groups[ev.date]=[];groups[ev.date].push(ev);});
   el.innerHTML=Object.entries(groups).map(([date,evs])=>{
     const d=new Date(date+'T12:00:00');
     const label=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
     return `<div><div class="date-label${date===today?' today':''}">${label}</div>${evs.map(ev=>`<div class="event-item"><div class="event-time">${ev.time||'—'}</div><div class="event-body"><div class="event-title">${esc(ev.title)}</div>${ev.note?`<div class="event-note">${esc(ev.note)}</div>`:''}</div><button class="event-del" onclick="delEvent('${ev.id}')">✕</button></div>`).join('')}</div>`;
   }).join('');
 }
-
-async function delEvent(id){
-  try{await api(`/api/data/${currentSpaceId}/agenda/${id}`,'DELETE');await loadSpaceData();renderAgenda();}catch(e){}
-}
-async function addEvent(title,date,time,note){
-  if(!title||!date)return false;
-  try{await api(`/api/data/${currentSpaceId}/agenda`,'POST',{title,date,time,note});await loadSpaceData();renderAgenda();return true;}
-  catch(e){toast(e.message);return false;}
-}
-
+async function delEvent(id){try{await api(`/api/data/${currentSpaceId}/agenda/${id}`,'DELETE');await loadSpaceData();renderAgenda();}catch(e){}}
+async function addEvent(title,date,time,note){if(!title||!date)return false;try{await api(`/api/data/${currentSpaceId}/agenda`,'POST',{title,date,time,note});await loadSpaceData();renderAgenda();return true;}catch(e){toast(e.message);return false;}}
 const eventModal=document.getElementById('event-modal');
 document.getElementById('fab').onclick=()=>{
   if(currentTab==='agenda'){document.getElementById('ev-date').value=new Date().toISOString().slice(0,10);document.getElementById('ev-title').value='';document.getElementById('ev-time').value='';document.getElementById('ev-note').value='';eventModal.classList.add('open');}
@@ -631,60 +502,43 @@ document.getElementById('fab').onclick=()=>{
 document.getElementById('modal-cancel').onclick=()=>eventModal.classList.remove('open');
 document.getElementById('modal-save').onclick=async()=>{if(await addEvent(document.getElementById('ev-title').value,document.getElementById('ev-date').value,document.getElementById('ev-time').value,document.getElementById('ev-note').value)){eventModal.classList.remove('open');toast('Evento guardado 📅');}};
 
-// =====================
 // NOTAS
-// =====================
 function renderNotas(){
-  const el=document.getElementById('notas-list');
-  const list=spaceData.notas||[];
+  const el=document.getElementById('notas-list');const list=spaceData.notas||[];
   if(!list.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📝</div><p>Sin notas. ¡Escribe algo!</p></div>';return;}
   el.innerHTML=[...list].reverse().map(nota=>`<div class="note-item" onclick="openNote('${nota.id}')"><div class="note-title">${esc(nota.title)||'Sin título'}</div><div class="note-body-prev">${esc(nota.body)}</div><div class="note-date">${nota.date}${nota.createdBy&&nota.createdBy!==currentUser?.name?' · '+esc(nota.createdBy):''}</div></div>`).join('');
 }
-
-function openNote(id){
-  editNoteId=id;
-  const nota=id?spaceData.notas.find(n=>n.id===id):null;
-  document.getElementById('note-title-input').value=nota?.title||'';
-  document.getElementById('note-body-input').value=nota?.body||'';
-  document.getElementById('note-editor').classList.add('open');
-}
+function openNote(id){editNoteId=id;const n=id?spaceData.notas.find(x=>x.id===id):null;document.getElementById('note-title-input').value=n?.title||'';document.getElementById('note-body-input').value=n?.body||'';document.getElementById('note-editor').classList.add('open');}
 document.getElementById('note-back').onclick=()=>document.getElementById('note-editor').classList.remove('open');
 document.getElementById('save-note-btn').onclick=async()=>{
-  const title=document.getElementById('note-title-input').value;
-  const body=document.getElementById('note-body-input').value;
+  const title=document.getElementById('note-title-input').value,body=document.getElementById('note-body-input').value;
   if(!title.trim()&&!body.trim()){toast('La nota está vacía');return;}
-  try{
-    if(editNoteId)await api(`/api/data/${currentSpaceId}/notas/${editNoteId}`,'PUT',{title,body});
-    else await api(`/api/data/${currentSpaceId}/notas`,'POST',{title,body});
-    await loadSpaceData();renderNotas();
-    document.getElementById('note-editor').classList.remove('open');toast('Nota guardada 📝');
-  }catch(e){toast('Error al guardar');}
+  try{if(editNoteId)await api(`/api/data/${currentSpaceId}/notas/${editNoteId}`,'PUT',{title,body});else await api(`/api/data/${currentSpaceId}/notas`,'POST',{title,body});await loadSpaceData();renderNotas();document.getElementById('note-editor').classList.remove('open');toast('Nota guardada 📝');}catch(e){toast('Error');}
 };
 
-// =====================
 // TTS
-// =====================
-function updateTtsBtn(){const el=document.getElementById('tts-btn');el.textContent=ttsOn?'🔊':'🔇';el.className=ttsOn?'':'off';}
-document.getElementById('tts-btn').onclick=()=>{ttsOn=!ttsOn;localStorage.setItem('socio_tts',ttsOn?'on':'off');updateTtsBtn();toast(ttsOn?'Socio hablará 🔊':'Voz desactivada 🔇');if(!ttsOn)speechSynthesis.cancel();};
-updateTtsBtn();
-function speak(text){if(!ttsOn||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='es-ES';u.rate=1.05;const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('es')&&!x.lang.includes('US'));if(v)u.voice=v;speechSynthesis.speak(u);}
+function toggleTts(){ttsOn=!ttsOn;localStorage.setItem('socio_tts',ttsOn?'on':'off');const btn=document.getElementById('tts-btn');btn.textContent=ttsOn?'🔊':'🔇';btn.className=ttsOn?'':'off';toast(ttsOn?'Voz activada 🔊':'Voz desactivada 🔇');}
+function speak(text,onEnd){
+  if(!text||!window.speechSynthesis)return;
+  speechSynthesis.cancel();
+  if(!ttsOn){if(onEnd)onEnd();return;}
+  const u=new SpeechSynthesisUtterance(text);u.lang='es-ES';u.rate=1.05;
+  const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('es')&&!x.lang.includes('US'));if(v)u.voice=v;
+  u.onend=()=>{if(onEnd)onEnd();};
+  speechSynthesis.speak(u);
+}
+document.getElementById('tts-btn').textContent=ttsOn?'🔊':'🔇';
+if(!ttsOn)document.getElementById('tts-btn').className='off';
 
-// =====================
 // TICKET
-// =====================
 document.getElementById('ticket-btn').onclick=()=>document.getElementById('ticket-panel').classList.add('open');
 document.getElementById('ticket-back').onclick=()=>document.getElementById('ticket-panel').classList.remove('open');
 document.getElementById('ticket-camera-btn').onclick=()=>document.getElementById('file-input').click();
 document.getElementById('file-input').onchange=(e)=>{
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=(ev)=>{
-    ticketData=ev.target.result.split(',')[1];
-    const prev=document.getElementById('ticket-preview');prev.src=ev.target.result;prev.style.display='block';
-    document.getElementById('ticket-placeholder').style.display='none';
-    document.getElementById('ticket-analyze-btn').style.display='block';
-    document.getElementById('ticket-result').style.display='none';
-  };reader.readAsDataURL(file);
+  reader.onload=(ev)=>{ticketData=ev.target.result.split(',')[1];const prev=document.getElementById('ticket-preview');prev.src=ev.target.result;prev.style.display='block';document.getElementById('ticket-placeholder').style.display='none';document.getElementById('ticket-analyze-btn').style.display='block';document.getElementById('ticket-result').style.display='none';};
+  reader.readAsDataURL(file);
 };
 document.getElementById('ticket-analyze-btn').onclick=async()=>{
   if(!ticketData)return;
@@ -692,28 +546,17 @@ document.getElementById('ticket-analyze-btn').onclick=async()=>{
   const res=document.getElementById('ticket-result');res.style.display='block';res.textContent='Leyendo el ticket...';
   try{
     const data=await api('/api/ai/ticket','POST',{imageData:ticketData});
-    const raw=data.content?.[0]?.text||'{}';
-    let parsed;try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch{parsed={productos:[],resumen:'No pude leer el ticket'};}
-    if(parsed.productos?.length){
-      res.innerHTML=`<strong style="color:var(--text)">Detectado:</strong><br>${parsed.productos.map(p=>`• ${p}`).join('<br>')}`;
-      for(const p of parsed.productos)await addItem('compra',p);
-      toast(`${parsed.productos.length} productos añadidos 🛒`);
-      speak(`He detectado ${parsed.productos.length} productos y los he apuntado`);
-    }else{res.textContent=parsed.resumen||'No detecté productos';}
+    const raw=data.content?.[0]?.text||'{}';let parsed;try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch{parsed={productos:[],resumen:'No pude leer el ticket'};}
+    if(parsed.productos?.length){res.innerHTML=`<strong style="color:var(--text)">Detectado:</strong><br>${parsed.productos.map(p=>`• ${p}`).join('<br>')}`;for(const p of parsed.productos)await addItem('compra',p);toast(`${parsed.productos.length} productos añadidos 🛒`);speak(`He detectado ${parsed.productos.length} productos y los he apuntado`);}
+    else{res.textContent=parsed.resumen||'No detecté productos';}
   }catch(e){res.textContent='Error al analizar.';}
   btn.innerHTML='✨ Analizar de nuevo';btn.disabled=false;
 };
 
-// =====================
 // CHAT IA
-// =====================
-function getContext(){
-  const c=spaceData.compra||[];const t=spaceData.tareas||[];const a=spaceData.agenda||[];
-  return `\n[ESPACIO: ${getSpaceName()} (${getSpaceType()})] Compra: ${c.length?c.map(x=>(x.done?'[✓] ':'')+x.name).join(', '):'vacía'} | Tareas: ${t.length?t.map(x=>(x.done?'[✓] ':'')+x.name).join(', '):'vacías'} | Agenda: ${a.length?a.slice(0,5).map(e=>`${e.date} ${e.time||''} ${e.title}`).join('; '):'sin eventos'}`;
-}
-
-const SYSTEM=`Eres "Socio", asistente personal en español informal de España. Amigable, eficiente, coloquial.
-SIEMPRE responde SOLO con JSON sin texto fuera. Formato: {"action":"...","items":[],"event":{},"note":{},"message":"..."}
+function getCtx(){const c=spaceData.compra||[],t=spaceData.tareas||[],a=spaceData.agenda||[];return `\n[${getSpaceName()}] Compra: ${c.length?c.map(x=>(x.done?'[✓] ':'')+x.name).join(', '):'vacía'} | Tareas: ${t.length?t.map(x=>(x.done?'[✓] ':'')+x.name).join(', '):'vacías'} | Agenda: ${a.length?a.slice(0,5).map(e=>`${e.date} ${e.time||''} ${e.title}`).join('; '):'sin eventos'}`;}
+const SYS=`Eres "Socio", asistente personal en español informal de España. Amigable, coloquial, eficiente.
+SOLO responde con JSON válido sin texto fuera. Formato: {"action":"...","items":[],"event":{},"note":{},"message":"..."}
 ACCIONES: add_compra(items[]), add_tarea(items[]), add_event(event:{title,date:YYYY-MM-DD,time:HH:MM,note}), add_nota(note:{title,body}), remove_compra(items[]), remove_tarea(items[]), done_compra(items[]), done_tarea(items[]), none.
 message: máx 2 frases coloquiales. Usa "venga","dale","genial","tío".
 Hoy: ${new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}. ISO: ${new Date().toISOString().slice(0,10)}.`;
@@ -737,19 +580,21 @@ function addSuggs(suggs){
 async function sendChat(){
   const input=document.getElementById('chat-input');const text=input.value.trim();if(!text)return;
   input.value='';input.style.height='auto';document.getElementById('send-btn').disabled=true;
-  addMsg(text,'user');chatHistory.push({role:'user',content:text+getContext()});
+  hfPaused=true;
+  addMsg(text,'user');chatHistory.push({role:'user',content:text+getCtx()});
   const thinking=addMsg('...','bot',true);
   try{
-    const data=await api('/api/ai/chat','POST',{system:SYSTEM,messages:chatHistory.slice(-12)});
+    const data=await api('/api/ai/chat','POST',{system:SYS,messages:chatHistory.slice(-12)});
     const raw=data.content?.[0]?.text||'{"action":"none","message":"No te he entendido."}';
     let parsed;try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch{parsed={action:'none',message:raw};}
     await doAction(parsed);
     thinking.parentElement.remove();
     addMsg(parsed.message||'¿Qué me decías?','bot');
-    speak(parsed.message||'');
     chatHistory.push({role:'assistant',content:raw});
     if(chatHistory.length<=2)addSuggs(['Apunta mantequilla','Añade leche y pan','Cita médica mañana','¿Qué tengo pendiente?']);
-  }catch(e){thinking.parentElement.remove();addMsg('Uy, algo ha fallado. Comprueba la conexión.','bot');}
+    // Speak then resume handsfree
+    speak(parsed.message||'',()=>{hfPaused=false;if(handsFreeOn)scheduleHFRestart(600);});
+  }catch(e){thinking.parentElement.remove();addMsg('Uy, algo ha fallado. Comprueba la conexión.','bot');hfPaused=false;if(handsFreeOn)scheduleHFRestart();}
   document.getElementById('send-btn').disabled=false;
 }
 
@@ -770,25 +615,66 @@ chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
 document.getElementById('send-btn').onclick=sendChat;
 
-// =====================
-// VOZ
-// =====================
-let recognition=null,isListening=false;
+// VOZ + MANOS LIBRES
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(SR){recognition=new SR();recognition.lang='es-ES';recognition.continuous=false;recognition.interimResults=true;recognition.onresult=e=>{const interim=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('mic-interim').textContent=interim;if(e.results[e.results.length-1].isFinal){stopListen();chatInput.value=interim;document.getElementById('send-btn').disabled=false;sendChat();}};recognition.onerror=()=>stopListen();recognition.onend=()=>{if(isListening)stopListen();};}else{document.getElementById('mic-btn').style.opacity='0.3';}
-function startListen(){if(!recognition){toast('Voz no disponible');return;}isListening=true;document.getElementById('mic-overlay').classList.add('show');document.getElementById('mic-interim').textContent='';recognition.start();}
-function stopListen(){isListening=false;document.getElementById('mic-overlay').classList.remove('show');try{recognition.stop();}catch(e){}}
-document.getElementById('mic-btn').onclick=()=>isListening?stopListen():startListen();
-document.getElementById('mic-cancel').onclick=stopListen;
+let recognition=null;
+if(SR){
+  recognition=new SR();
+  recognition.lang='es-ES';recognition.continuous=false;recognition.interimResults=true;
+  recognition.onstart=()=>{isListening=true;document.getElementById('mic-btn').classList.add('listening');document.getElementById('mic-overlay').classList.add('show');document.getElementById('mic-interim').textContent='';};
+  recognition.onresult=e=>{
+    const interim=Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('mic-interim').textContent=interim;
+    if(e.results[e.results.length-1].isFinal){
+      stopListen();
+      if(interim.trim()){chatInput.value=interim.trim();document.getElementById('send-btn').disabled=false;sendChat();}
+      else if(handsFreeOn)scheduleHFRestart();
+    }
+  };
+  recognition.onerror=e=>{stopListen();if(e.error!=='no-speech'&&e.error!=='aborted')toast('Error de micrófono: '+e.error);if(handsFreeOn&&e.error==='no-speech')scheduleHFRestart();};
+  recognition.onend=()=>{isListening=false;document.getElementById('mic-btn').classList.remove('listening');document.getElementById('mic-overlay').classList.remove('show');if(handsFreeOn&&!hfPaused)scheduleHFRestart();};
+}else{document.getElementById('mic-btn').style.opacity='0.3';document.getElementById('handsfree-btn').style.opacity='0.3';}
 
-// =====================
+function startListen(){
+  if(!recognition||isListening)return;
+  try{recognition.start();}catch(e){}
+}
+function stopListen(){
+  isListening=false;
+  document.getElementById('mic-btn').classList.remove('listening');
+  document.getElementById('mic-overlay').classList.remove('show');
+  try{recognition.stop();}catch(e){}
+}
+function scheduleHFRestart(delay=1000){
+  clearTimeout(hfRestartTimer);
+  hfRestartTimer=setTimeout(()=>{if(handsFreeOn&&!hfPaused&&!isListening)startListen();},delay);
+}
+function updateHFBtn(){
+  const btn=document.getElementById('handsfree-btn');
+  if(handsFreeOn){btn.textContent='🟢 libre';btn.classList.add('active');document.getElementById('mic-wave').classList.add('green');document.getElementById('mic-status').textContent='Manos libres activo';}
+  else{btn.textContent='🎙️ libre';btn.classList.remove('active');document.getElementById('mic-wave').classList.remove('green');document.getElementById('mic-status').textContent='Escuchando...';}
+}
+function toggleHandsFree(){
+  handsFreeOn=!handsFreeOn;hfPaused=false;
+  updateHFBtn();
+  if(handsFreeOn){
+    toast('🟢 Manos libres activado');
+    speak('Manos libres activado, te escucho.',()=>scheduleHFRestart(300));
+  }else{
+    clearTimeout(hfRestartTimer);stopListen();
+    toast('Manos libres desactivado');
+  }
+}
+document.getElementById('mic-btn').onclick=()=>{if(isListening)stopListen();else startListen();};
+document.getElementById('mic-cancel').onclick=()=>{
+  if(handsFreeOn){hfPaused=true;clearTimeout(hfRestartTimer);stopListen();toast('Escucha pausada. Pulsa 🟢 libre para reanudar.');}
+  else stopListen();
+};
+
 // BOOT
-// =====================
 async function boot(){
-  if(token){
-    try{const data=await api('/api/auth/me');currentUser=data.user;startApp();}
-    catch(e){localStorage.removeItem('socio_token');token=null;document.getElementById('loading').classList.add('hidden');}
-  }else{document.getElementById('loading').classList.add('hidden');}
+  if(token){try{const data=await api('/api/auth/me');currentUser=data.user;await startApp();}catch(e){localStorage.removeItem('socio_token');token=null;document.getElementById('loading').classList.add('hidden');}}
+  else{document.getElementById('loading').classList.add('hidden');}
 }
 boot();
 </script>
