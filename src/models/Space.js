@@ -15,6 +15,8 @@ const eventSchema = new mongoose.Schema({
   time: String,
   note: String,
   createdBy: String,
+  notifyUserId: { type: String, default: null },
+  notified: { type: Boolean, default: false },
   ts: { type: Date, default: Date.now }
 });
 
