@@ -687,17 +687,23 @@ let vapidKey = null;
 
 async function initPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (!token) return;
   try {
-    const reg = await navigator.serviceWorker.ready;
     const data = await api('/api/notif/vapid-key');
     vapidKey = data.publicKey;
+    const reg = await navigator.serviceWorker.ready;
     const existing = await reg.pushManager.getSubscription();
-    if (existing) { await saveSub(existing); return; }
-  } catch(e) {}
+    if (existing) { await saveSub(existing); }
+  } catch(e) { console.log('initPush error:', e); }
 }
 
 async function requestPushPermission() {
-  if (!vapidKey) { toast('Push no disponible'); return false; }
+  if (!vapidKey) { 
+    try {
+      const data = await api('/api/notif/vapid-key');
+      vapidKey = data.publicKey;
+    } catch(e) { toast('Push no disponible'); return false; }
+  }
   try {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') { toast('Permiso denegado. Actívalo en ajustes del navegador.'); return false; }
@@ -706,14 +712,18 @@ async function requestPushPermission() {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey)
     });
-    await saveSub(sub);
-    toast('¡Notificaciones activadas! 🔔');
-    return true;
-  } catch(e) { toast('Error activando notificaciones'); return false; }
+    const ok = await saveSub(sub);
+    if (ok) { toast('¡Notificaciones activadas! 🔔'); return true; }
+    else { toast('Error guardando suscripción'); return false; }
+  } catch(e) { console.log('pushPermission error:', e); toast('Error activando notificaciones: ' + e.message); return false; }
 }
 
 async function saveSub(sub) {
-  try { await api('/api/notif/subscribe', 'POST', { subscription: sub }); } catch(e) {}
+  try {
+    const subJson = sub.toJSON ? sub.toJSON() : sub;
+    await api('/api/notif/subscribe', 'POST', { subscription: subJson });
+    return true;
+  } catch(e) { console.log('saveSub error:', e); return false; }
 }
 
 function urlBase64ToUint8Array(base64String) {
