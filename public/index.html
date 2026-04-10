@@ -681,3 +681,100 @@ boot();
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
 </body>
 </html>
+<script>
+// PUSH NOTIFICATIONS
+let vapidKey = null;
+
+async function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const data = await api('/api/notif/vapid-key');
+    vapidKey = data.publicKey;
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) { await saveSub(existing); return; }
+  } catch(e) {}
+}
+
+async function requestPushPermission() {
+  if (!vapidKey) { toast('Push no disponible'); return false; }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('Permiso denegado. Actívalo en ajustes del navegador.'); return false; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey)
+    });
+    await saveSub(sub);
+    toast('¡Notificaciones activadas! 🔔');
+    return true;
+  } catch(e) { toast('Error activando notificaciones'); return false; }
+}
+
+async function saveSub(sub) {
+  try { await api('/api/notif/subscribe', 'POST', { subscription: sub }); } catch(e) {}
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function toggleEventNotif(spaceId, eventId, btn) {
+  const isActive = btn.dataset.active === 'true';
+  if (!isActive) {
+    const perm = Notification.permission;
+    if (perm !== 'granted') {
+      const ok = await requestPushPermission();
+      if (!ok) return;
+    }
+  }
+  try {
+    await api('/api/notif/event-notif', 'POST', { spaceId, eventId, enabled: !isActive });
+    btn.dataset.active = (!isActive).toString();
+    btn.textContent = !isActive ? '🔔' : '🔕';
+    btn.style.opacity = !isActive ? '1' : '0.4';
+    toast(!isActive ? 'Aviso activado 30 min antes 🔔' : 'Aviso cancelado');
+  } catch(e) { toast('Error'); }
+}
+
+// Patch renderAgenda to include notification buttons
+const _origRenderAgenda = renderAgenda;
+window.renderAgenda = function() {
+  const el = document.getElementById('agenda-list');
+  const list = spaceData.agenda || [];
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><p>Sin eventos. ¡Añade uno!</p></div>'; return; }
+  const sorted = [...list].sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  const today = new Date().toISOString().slice(0,10);
+  const groups = {};
+  sorted.forEach(ev => { if (!groups[ev.date]) groups[ev.date] = []; groups[ev.date].push(ev); });
+  el.innerHTML = Object.entries(groups).map(([date, evs]) => {
+    const d = new Date(date + 'T12:00:00');
+    const label = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
+    return `<div><div class="date-label${date===today?' today':''}">${label}</div>${evs.map(ev => {
+      const hasNotif = !!ev.notifyUserId;
+      return `<div class="event-item">
+        <div class="event-time">${ev.time||'—'}</div>
+        <div class="event-body">
+          <div class="event-title">${esc(ev.title)}</div>
+          ${ev.note ? `<div class="event-note">${esc(ev.note)}</div>` : ''}
+        </div>
+        <button onclick="toggleEventNotif('${currentSpaceId}','${ev.id}',this)" data-active="${hasNotif}" style="font-size:16px;background:none;border:none;cursor:pointer;opacity:${hasNotif?1:0.4};margin-right:4px" title="${hasNotif?'Cancelar aviso':'Activar aviso 30min antes'}">${hasNotif?'🔔':'🔕'}</button>
+        <button class="event-del" onclick="delEvent('${ev.id}')">✕</button>
+      </div>`;
+    }).join('')}</div>`;
+  }).join('');
+};
+
+// Init push on app start
+const _origStartApp = startApp;
+window.startApp = async function() {
+  await _origStartApp();
+  initPush();
+};
+</script>
