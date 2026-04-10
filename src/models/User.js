@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     type: { type: String, enum: ['personal', 'family', 'business'], default: 'personal' },
     role: { type: String, enum: ['owner', 'member'], default: 'owner' }
   }],
+  pushSubscription: { type: Object, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 
