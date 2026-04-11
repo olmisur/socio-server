@@ -1,5 +1,8 @@
 const express = require('express');
 const Space = require('../models/Space');
+const SpaceItem = require('../models/SpaceItem');
+const SpaceEvent = require('../models/SpaceEvent');
+const SpaceNote = require('../models/SpaceNote');
 const authMiddleware = require('../middleware/auth');
 const { normalizeTimeZone, serializeAgendaEvent } = require('../utils/agendaNotifications');
 const {
@@ -16,26 +19,34 @@ const router = express.Router();
 
 function genId() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
+// Verifica que el usuario es miembro del espacio y devuelve el documento Space
 async function getSpace(spaceId, userId) {
   const safeSpaceId = requiredString(spaceId, 'Espacio invalido', { min: 3, max: 120 });
   const space = await Space.findOne({ id: safeSpaceId });
   if (!space) return null;
-
-  const isMember = space.members.find(member => member.userId === userId.toString());
+  const isMember = space.members.find(m => m.userId === userId.toString());
   return isMember ? space : null;
 }
 
+// ── GET espacio ────────────────────────────────────────────────────────────────
 router.get('/:spaceId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
 
+    const [compra, tareas, agenda, notas] = await Promise.all([
+      SpaceItem.find({ spaceId: space.id, type: 'compra' }).sort({ ts: 1 }),
+      SpaceItem.find({ spaceId: space.id, type: 'tareas' }).sort({ ts: 1 }),
+      SpaceEvent.find({ spaceId: space.id }).sort({ date: 1, time: 1 }),
+      SpaceNote.find({ spaceId: space.id }).sort({ ts: 1 })
+    ]);
+
     return res.json({
-      compra: space.compra,
-      tareas: space.tareas,
-      agenda: space.agenda.map(event => serializeAgendaEvent(event, req.user._id)),
-      notas: space.notas,
-      members: space.members.map(member => ({ name: member.name, role: member.role })),
+      compra,
+      tareas,
+      agenda: agenda.map(ev => serializeAgendaEvent(ev, req.user._id)),
+      notas,
+      members: space.members.map(m => ({ name: m.name, role: m.role })),
       inviteCode: space.inviteCode
     });
   } catch (e) {
@@ -44,6 +55,7 @@ router.get('/:spaceId', authMiddleware, async (req, res) => {
   }
 });
 
+// ── COMPRA ─────────────────────────────────────────────────────────────────────
 router.post('/:spaceId/compra', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
@@ -51,10 +63,7 @@ router.post('/:spaceId/compra', authMiddleware, async (req, res) => {
 
     const body = ensureObject(req.body);
     const name = requiredString(body.name, 'Nombre requerido', { min: 1, max: 120 }).toLowerCase();
-    const item = { id: genId(), name, done: false, addedBy: req.user.name, ts: new Date() };
-
-    space.compra.push(item);
-    await space.save();
+    const item = await SpaceItem.create({ spaceId: space.id, type: 'compra', id: genId(), name, done: false, addedBy: req.user.name });
     return res.json(item);
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -70,12 +79,8 @@ router.patch('/:spaceId/compra/:itemId', authMiddleware, async (req, res) => {
     const itemId = requiredString(req.params.itemId, 'Item invalido', { min: 3, max: 120 });
     const body = ensureObject(req.body);
     const done = requiredBoolean(body.done, 'Estado invalido');
-    const item = space.compra.find(entry => entry.id === itemId);
-
+    const item = await SpaceItem.findOneAndUpdate({ spaceId: space.id, type: 'compra', id: itemId }, { done }, { new: true });
     if (!item) return res.status(404).json({ error: 'Item no encontrado' });
-
-    item.done = done;
-    await space.save();
     return res.json(item);
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -89,8 +94,7 @@ router.delete('/:spaceId/compra/:itemId', authMiddleware, async (req, res) => {
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
 
     const itemId = requiredString(req.params.itemId, 'Item invalido', { min: 3, max: 120 });
-    space.compra = space.compra.filter(item => item.id !== itemId);
-    await space.save();
+    await SpaceItem.deleteOne({ spaceId: space.id, type: 'compra', id: itemId });
     return res.json({ ok: true });
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -107,10 +111,9 @@ router.delete('/:spaceId/compra', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Filtro invalido' });
     }
 
-    if (req.query.done === 'true') space.compra = space.compra.filter(item => !item.done);
-    else space.compra = [];
-
-    await space.save();
+    const filter = { spaceId: space.id, type: 'compra' };
+    if (req.query.done === 'true') filter.done = true;
+    await SpaceItem.deleteMany(filter);
     return res.json({ ok: true });
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -118,6 +121,7 @@ router.delete('/:spaceId/compra', authMiddleware, async (req, res) => {
   }
 });
 
+// ── TAREAS ─────────────────────────────────────────────────────────────────────
 router.post('/:spaceId/tareas', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
@@ -125,10 +129,7 @@ router.post('/:spaceId/tareas', authMiddleware, async (req, res) => {
 
     const body = ensureObject(req.body);
     const name = requiredString(body.name, 'Nombre requerido', { min: 1, max: 160 });
-    const item = { id: genId(), name, done: false, addedBy: req.user.name, ts: new Date() };
-
-    space.tareas.push(item);
-    await space.save();
+    const item = await SpaceItem.create({ spaceId: space.id, type: 'tareas', id: genId(), name, done: false, addedBy: req.user.name });
     return res.json(item);
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -143,8 +144,7 @@ router.patch('/:spaceId/tareas/:itemId', authMiddleware, async (req, res) => {
 
     const itemId = requiredString(req.params.itemId, 'Tarea invalida', { min: 3, max: 120 });
     const body = ensureObject(req.body);
-    const item = space.tareas.find(entry => entry.id === itemId);
-
+    const item = await SpaceItem.findOne({ spaceId: space.id, type: 'tareas', id: itemId });
     if (!item) return res.status(404).json({ error: 'No encontrado' });
 
     const hasDone = Object.prototype.hasOwnProperty.call(body, 'done');
@@ -153,8 +153,7 @@ router.patch('/:spaceId/tareas/:itemId', authMiddleware, async (req, res) => {
 
     if (hasDone) item.done = requiredBoolean(body.done, 'Estado invalido');
     if (hasName) item.name = requiredString(body.name, 'Nombre requerido', { min: 1, max: 160 });
-
-    await space.save();
+    await item.save();
     return res.json(item);
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -168,8 +167,7 @@ router.delete('/:spaceId/tareas/:itemId', authMiddleware, async (req, res) => {
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
 
     const itemId = requiredString(req.params.itemId, 'Tarea invalida', { min: 3, max: 120 });
-    space.tareas = space.tareas.filter(item => item.id !== itemId);
-    await space.save();
+    await SpaceItem.deleteOne({ spaceId: space.id, type: 'tareas', id: itemId });
     return res.json({ ok: true });
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -177,6 +175,7 @@ router.delete('/:spaceId/tareas/:itemId', authMiddleware, async (req, res) => {
   }
 });
 
+// ── AGENDA ─────────────────────────────────────────────────────────────────────
 router.post('/:spaceId/agenda', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
@@ -189,20 +188,7 @@ router.post('/:spaceId/agenda', authMiddleware, async (req, res) => {
     const note = optionalString(body.note, 'Nota invalida', { max: 500 });
     const timeZone = normalizeTimeZone(body.timeZone);
 
-    const event = {
-      id: genId(),
-      title,
-      date,
-      time,
-      timeZone,
-      note,
-      createdBy: req.user.name,
-      reminders: [],
-      ts: new Date()
-    };
-
-    space.agenda.push(event);
-    await space.save();
+    const event = await SpaceEvent.create({ spaceId: space.id, id: genId(), title, date, time, timeZone, note, createdBy: req.user.name, reminders: [] });
     return res.json(serializeAgendaEvent(event, req.user._id));
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -217,24 +203,17 @@ router.put('/:spaceId/agenda/:evId', authMiddleware, async (req, res) => {
 
     const eventId = requiredString(req.params.evId, 'Evento invalido', { min: 3, max: 120 });
     const body = ensureObject(req.body);
-    const event = space.agenda.find(entry => entry.id === eventId);
-
+    const event = await SpaceEvent.findOne({ spaceId: space.id, id: eventId });
     if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
 
-    const title = requiredString(body.title, 'Titulo y fecha requeridos', { min: 1, max: 160 });
-    const date = isoDate(body.date, 'Fecha invalida');
-    const time = hhmmTime(body.time, 'Hora invalida');
-    const note = optionalString(body.note, 'Nota invalida', { max: 500 });
-
-    event.title = title;
-    event.date = date;
-    event.time = time;
-    event.note = note;
+    event.title = requiredString(body.title, 'Titulo y fecha requeridos', { min: 1, max: 160 });
+    event.date  = isoDate(body.date, 'Fecha invalida');
+    event.time  = hhmmTime(body.time, 'Hora invalida');
+    event.note  = optionalString(body.note, 'Nota invalida', { max: 500 });
     if (Object.prototype.hasOwnProperty.call(body, 'timeZone')) {
       event.timeZone = normalizeTimeZone(body.timeZone);
     }
-
-    await space.save();
+    await event.save();
     return res.json(serializeAgendaEvent(event, req.user._id));
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -248,8 +227,7 @@ router.delete('/:spaceId/agenda/:evId', authMiddleware, async (req, res) => {
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
 
     const eventId = requiredString(req.params.evId, 'Evento invalido', { min: 3, max: 120 });
-    space.agenda = space.agenda.filter(event => event.id !== eventId);
-    await space.save();
+    await SpaceEvent.deleteOne({ spaceId: space.id, id: eventId });
     return res.json({ ok: true });
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -257,6 +235,7 @@ router.delete('/:spaceId/agenda/:evId', authMiddleware, async (req, res) => {
   }
 });
 
+// ── NOTAS ──────────────────────────────────────────────────────────────────────
 router.post('/:spaceId/notas', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
@@ -267,17 +246,7 @@ router.post('/:spaceId/notas', authMiddleware, async (req, res) => {
     const noteBody = optionalString(body.body, 'Contenido invalido', { max: 5000 });
     if (!title && !noteBody) return res.status(400).json({ error: 'La nota esta vacia' });
 
-    const note = {
-      id: genId(),
-      title,
-      body: noteBody,
-      createdBy: req.user.name,
-      date: new Date().toLocaleDateString('es-ES'),
-      ts: new Date()
-    };
-
-    space.notas.push(note);
-    await space.save();
+    const note = await SpaceNote.create({ spaceId: space.id, id: genId(), title, body: noteBody, createdBy: req.user.name, date: new Date().toLocaleDateString('es-ES') });
     return res.json(note);
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -292,23 +261,21 @@ router.put('/:spaceId/notas/:notaId', authMiddleware, async (req, res) => {
 
     const noteId = requiredString(req.params.notaId, 'Nota invalida', { min: 3, max: 120 });
     const body = ensureObject(req.body);
-    const note = space.notas.find(entry => entry.id === noteId);
-
+    const note = await SpaceNote.findOne({ spaceId: space.id, id: noteId });
     if (!note) return res.status(404).json({ error: 'No encontrada' });
 
     const hasTitle = Object.prototype.hasOwnProperty.call(body, 'title');
-    const hasBody = Object.prototype.hasOwnProperty.call(body, 'body');
+    const hasBody  = Object.prototype.hasOwnProperty.call(body, 'body');
     if (!hasTitle && !hasBody) return res.status(400).json({ error: 'Sin cambios validos' });
 
     const nextTitle = hasTitle ? optionalString(body.title, 'Titulo invalido', { max: 120 }) : note.title;
-    const nextBody = hasBody ? optionalString(body.body, 'Contenido invalido', { max: 5000 }) : note.body;
+    const nextBody  = hasBody  ? optionalString(body.body,  'Contenido invalido', { max: 5000 }) : note.body;
     if (!nextTitle && !nextBody) return res.status(400).json({ error: 'La nota esta vacia' });
 
     note.title = nextTitle;
-    note.body = nextBody;
-    note.date = new Date().toLocaleDateString('es-ES');
-
-    await space.save();
+    note.body  = nextBody;
+    note.date  = new Date().toLocaleDateString('es-ES');
+    await note.save();
     return res.json(note);
   } catch (e) {
     if (e?.status) return safeError(res, e);
@@ -322,8 +289,7 @@ router.delete('/:spaceId/notas/:notaId', authMiddleware, async (req, res) => {
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
 
     const noteId = requiredString(req.params.notaId, 'Nota invalida', { min: 3, max: 120 });
-    space.notas = space.notas.filter(note => note.id !== noteId);
-    await space.save();
+    await SpaceNote.deleteOne({ spaceId: space.id, id: noteId });
     return res.json({ ok: true });
   } catch (e) {
     if (e?.status) return safeError(res, e);

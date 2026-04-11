@@ -5,6 +5,42 @@ Registro de todos los cambios, mejoras y correcciones de la app.
 
 ---
 
+## [2.7.0] — 2026-04-11
+### 🔧 Fiabilidad
+**Scheduler robusto**
+- Reemplazado `setInterval` por `node-cron` (`*/5 * * * *`) en `notifications.js`
+- Protección ante ejecuciones solapadas con flag `checkRunning`
+- El scheduler se alinea al reloj (sin deriva) y respeta DST
+
+**Modelo de datos mejorado**
+- Creadas colecciones propias: `SpaceItem`, `SpaceEvent`, `SpaceNote`
+- Índices compuestos `{ spaceId, id }` (único), `{ spaceId, type }`, `{ spaceId, date }`
+- `data.js` actualizado: todas las lecturas/escrituras usan las nuevas colecciones
+- El scheduler de notificaciones consulta `SpaceEvent` directamente (sin cargar todos los `Space`)
+- `scripts/migrate-collections.js` — migración idempotente de datos embebidos existentes
+- Los arrays embebidos en `Space` se mantienen por compatibilidad hasta limpiarlos manualmente
+
+**Observabilidad**
+- `src/utils/logger.js` — salida JSON estructurada `{ ts, level, msg, ...meta }` (silenciado en tests)
+- `GET /health` — devuelve `{ status, uptime, db, ts }`, HTTP 503 si MongoDB no está conectado
+- Error handler global en Express para errores no capturados por rutas
+- `uncaughtException` y `unhandledRejection` capturados en `server.js` con log antes de salir
+
+---
+
+## [2.6.0] — 2026-04-11
+### ✅ Tests automatizados de integración
+- `src/app.js` extraído de `server.js` para instanciar la app sin conectar a MongoDB de producción
+- `test/helpers.js` — infraestructura compartida: MongoDB en memoria (`mongodb-memory-server`) + cliente HTTP (`supertest`)
+- `test/auth.test.js` — 16 tests: registro, login, normalización de email, espacios, códigos de invitación
+- `test/data.test.js` — 23 tests: control de acceso entre usuarios, CRUD compra/tareas/agenda/notas, zona horaria en eventos, espacio compartido
+- `test/notif.test.js` — 9 tests: rutas push sin VAPID, autenticación y validación de body
+- `test/index.js` — runner que ejecuta unit tests + integración en secuencia
+- `npm test` ahora cubre 60 tests (12 unit + 48 integración)
+- **Validación robusta** marcada como completada: `requestValidation.js` ya cubre lo equivalente a `zod`/`joi` sin dependencia extra
+
+---
+
 ## [2.5.0] — 2026-04-11
 ### 🏗️ Refactor — separación en módulos
 - `public/index.html` reducido de 850 líneas a 202 (solo HTML estructural)

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"require\\('supertest'\\); require\\('mongodb-memory-server'\\); console.log\\('ok'\\)\")",
+      "Bash(npm test:*)",
+      "Bash(node --check src/app.js src/server.js src/routes/data.js src/routes/notifications.js src/utils/logger.js src/models/SpaceItem.js src/models/SpaceEvent.js src/models/SpaceNote.js scripts/migrate-collections.js)"
     ]
   }
 }
