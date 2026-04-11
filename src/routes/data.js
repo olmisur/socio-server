@@ -210,6 +210,38 @@ router.post('/:spaceId/agenda', authMiddleware, async (req, res) => {
   }
 });
 
+router.put('/:spaceId/agenda/:evId', authMiddleware, async (req, res) => {
+  try {
+    const space = await getSpace(req.params.spaceId, req.user._id);
+    if (!space) return res.status(403).json({ error: 'Sin acceso' });
+
+    const eventId = requiredString(req.params.evId, 'Evento invalido', { min: 3, max: 120 });
+    const body = ensureObject(req.body);
+    const event = space.agenda.find(entry => entry.id === eventId);
+
+    if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
+
+    const title = requiredString(body.title, 'Titulo y fecha requeridos', { min: 1, max: 160 });
+    const date = isoDate(body.date, 'Fecha invalida');
+    const time = hhmmTime(body.time, 'Hora invalida');
+    const note = optionalString(body.note, 'Nota invalida', { max: 500 });
+
+    event.title = title;
+    event.date = date;
+    event.time = time;
+    event.note = note;
+    if (Object.prototype.hasOwnProperty.call(body, 'timeZone')) {
+      event.timeZone = normalizeTimeZone(body.timeZone);
+    }
+
+    await space.save();
+    return res.json(serializeAgendaEvent(event, req.user._id));
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
+});
+
 router.delete('/:spaceId/agenda/:evId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);

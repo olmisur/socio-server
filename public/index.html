@@ -264,7 +264,7 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 </div>
 <div class="modal-overlay" id="event-modal">
   <div class="modal">
-    <h3>Nuevo evento</h3>
+    <h3 id="event-modal-title">Nuevo evento</h3>
     <div class="modal-field"><label class="modal-label">Título</label><input class="modal-input" id="ev-title" placeholder="Qué tienes"></div>
     <div class="modal-row">
       <div class="modal-field"><label class="modal-label">Fecha</label><input class="modal-input" id="ev-date" type="date"></div>
@@ -325,7 +325,7 @@ const API_BASE='';
 let token=localStorage.getItem('socio_token');
 let currentUser=null,currentSpaceId=null;
 let spaceData={compra:[],tareas:[],agenda:[],notas:[],members:[],inviteCode:null};
-let pollTimer=null,chatHistory=[],currentTab='chat',editNoteId=null,ticketData=null;
+let pollTimer=null,chatHistory=[],currentTab='chat',editNoteId=null,editEventId=null,ticketData=null;
 let ttsOn=localStorage.getItem('socio_tts')!=='off';
 let handsFreeOn=false,hfPaused=false,hfRestartTimer=null,isListening=false;
 
@@ -494,14 +494,17 @@ function renderAgenda(){
 }
 async function delEvent(id){try{await api(`/api/data/${currentSpaceId}/agenda/${id}`,'DELETE');await loadSpaceData();renderAgenda();}catch(e){}}
 function getClientTimeZone(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Madrid';}catch(e){return 'Europe/Madrid';}}
-async function addEvent(title,date,time,note){if(!title||!date)return false;try{await api(`/api/data/${currentSpaceId}/agenda`,'POST',{title,date,time,note,timeZone:getClientTimeZone()});await loadSpaceData();renderAgenda();return true;}catch(e){toast(e.message);return false;}}
+function resetEventModal(){editEventId=null;document.getElementById('event-modal-title').textContent='Nuevo evento';document.getElementById('ev-title').value='';document.getElementById('ev-date').value=new Date().toISOString().slice(0,10);document.getElementById('ev-time').value='';document.getElementById('ev-note').value='';}
+function openEventModal(id){const ev=id?spaceData.agenda.find(x=>x.id===id):null;editEventId=ev?.id||null;document.getElementById('event-modal-title').textContent=editEventId?'Editar evento':'Nuevo evento';document.getElementById('ev-title').value=ev?.title||'';document.getElementById('ev-date').value=ev?.date||new Date().toISOString().slice(0,10);document.getElementById('ev-time').value=ev?.time||'';document.getElementById('ev-note').value=ev?.note||'';eventModal.classList.add('open');}
+async function saveEvent(title,date,time,note){if(!title||!date)return false;try{if(editEventId)await api(`/api/data/${currentSpaceId}/agenda/${editEventId}`,'PUT',{title,date,time,note,timeZone:getClientTimeZone()});else await api(`/api/data/${currentSpaceId}/agenda`,'POST',{title,date,time,note,timeZone:getClientTimeZone()});await loadSpaceData();renderAgenda();return true;}catch(e){toast(e.message);return false;}}
+async function addEvent(title,date,time,note){const prevEditEventId=editEventId;editEventId=null;const ok=await saveEvent(title,date,time,note);editEventId=prevEditEventId;return ok;}
 const eventModal=document.getElementById('event-modal');
 document.getElementById('fab').onclick=()=>{
-  if(currentTab==='agenda'){document.getElementById('ev-date').value=new Date().toISOString().slice(0,10);document.getElementById('ev-title').value='';document.getElementById('ev-time').value='';document.getElementById('ev-note').value='';eventModal.classList.add('open');}
+  if(currentTab==='agenda')openEventModal(null);
   else if(currentTab==='notas')openNote(null);
 };
-document.getElementById('modal-cancel').onclick=()=>eventModal.classList.remove('open');
-document.getElementById('modal-save').onclick=async()=>{if(await addEvent(document.getElementById('ev-title').value,document.getElementById('ev-date').value,document.getElementById('ev-time').value,document.getElementById('ev-note').value)){eventModal.classList.remove('open');toast('Evento guardado 📅');}};
+document.getElementById('modal-cancel').onclick=()=>{eventModal.classList.remove('open');resetEventModal();};
+document.getElementById('modal-save').onclick=async()=>{if(await saveEvent(document.getElementById('ev-title').value,document.getElementById('ev-date').value,document.getElementById('ev-time').value,document.getElementById('ev-note').value)){eventModal.classList.remove('open');toast(editEventId?'Evento actualizado':'Evento guardado');resetEventModal();}};
 
 // NOTAS
 function renderNotas(){
@@ -824,7 +827,7 @@ window.renderAgenda = function() {
       const hasNotif = !!ev.notifyEnabled;
       return `<div class="event-item">
         <div class="event-time">${ev.time||'—'}</div>
-        <div class="event-body">
+        <div class="event-body" onclick="openEventModal('${ev.id}')">
           <div class="event-title">${esc(ev.title)}</div>
           ${ev.note ? `<div class="event-note">${esc(ev.note)}</div>` : ''}
         </div>
