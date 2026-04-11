@@ -101,6 +101,11 @@ function hasReminderForUser(event, userId) {
   return ensureReminderCollection(event).some(reminder => reminder.userId === userIdStr);
 }
 
+function getReminderForUser(event, userId) {
+  const userIdStr = String(userId);
+  return ensureReminderCollection(event).find(reminder => reminder.userId === userIdStr) || null;
+}
+
 function setReminderForUser(event, userId, enabled) {
   const userIdStr = String(userId);
   const reminders = ensureReminderCollection(event);
@@ -134,6 +139,7 @@ function serializeAgendaEvent(event, userId) {
 module.exports = {
   DEFAULT_TIMEZONE,
   ensureReminderCollection,
+  getReminderForUser,
   hasReminderForUser,
   normalizeTimeZone,
   serializeAgendaEvent,

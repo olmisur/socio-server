@@ -841,4 +841,7 @@ window.startApp = async function() {
   await _origStartApp();
   await initPush();
 };
+window.socioDebugPush = (spaceId, eventId) => api(`/api/notif/debug?spaceId=${encodeURIComponent(spaceId)}&eventId=${encodeURIComponent(eventId)}`);
+window.socioTestPush = () => api('/api/notif/test', 'POST');
+window.socioRunNotifCheck = () => api('/api/notif/check-now', 'POST');
 </script>

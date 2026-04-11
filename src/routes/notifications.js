@@ -6,6 +6,7 @@ const authMiddleware = require('../middleware/auth');
 const {
   DEFAULT_TIMEZONE,
   ensureReminderCollection,
+  getReminderForUser,
   normalizeTimeZone,
   setReminderForUser,
   zonedDateTimeToUtc
@@ -13,6 +14,9 @@ const {
 
 const router = express.Router();
 const hasVapidConfig = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+let lastCheckAt = null;
+let schedulerStartedAt = null;
+let schedulerTimer = null;
 
 if (hasVapidConfig) {
   webpush.setVapidDetails(
@@ -28,6 +32,53 @@ async function getSpaceForUser(spaceId, userId) {
 
   const isMember = space.members.some(member => member.userId === String(userId));
   return isMember ? space : null;
+}
+
+function summarizeSubscription(subscription) {
+  if (!subscription?.endpoint) {
+    return {
+      hasSubscription: false
+    };
+  }
+
+  let endpointHost = null;
+  try {
+    endpointHost = new URL(subscription.endpoint).host;
+  } catch {
+    endpointHost = null;
+  }
+
+  return {
+    hasSubscription: true,
+    endpointHost,
+    endpointTail: subscription.endpoint.slice(-18),
+    hasP256dh: Boolean(subscription.keys?.p256dh),
+    hasAuth: Boolean(subscription.keys?.auth)
+  };
+}
+
+async function sendPushToUser(user, payload) {
+  if (!user?.pushSubscription) {
+    return { ok: false, reason: 'missing_subscription' };
+  }
+
+  try {
+    await webpush.sendNotification(user.pushSubscription, JSON.stringify(payload));
+    return { ok: true };
+  } catch (error) {
+    console.error('Error enviando push:', error.message);
+
+    if (error.statusCode === 404 || error.statusCode === 410) {
+      await User.findByIdAndUpdate(user._id, { pushSubscription: null });
+    }
+
+    return {
+      ok: false,
+      reason: 'send_failed',
+      statusCode: error.statusCode || null,
+      message: error.message
+    };
+  }
 }
 
 router.get('/vapid-key', (req, res) => {
@@ -78,9 +129,107 @@ router.post('/event-notif', authMiddleware, async (req, res) => {
   }
 });
 
+router.get('/debug', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('pushSubscription');
+    const response = {
+      nowUtc: new Date().toISOString(),
+      appTimeZone: DEFAULT_TIMEZONE,
+      hasVapidConfig,
+      schedulerStartedAt,
+      lastCheckAt,
+      schedulerRunning: Boolean(schedulerTimer),
+      user: summarizeSubscription(user?.pushSubscription)
+    };
+
+    const { spaceId, eventId } = req.query;
+    if (!spaceId || !eventId) {
+      return res.json(response);
+    }
+
+    const space = await getSpaceForUser(spaceId, req.user._id);
+    if (!space) {
+      return res.status(403).json({ ...response, error: 'Sin acceso al espacio' });
+    }
+
+    const event = space.agenda.find(entry => entry.id === eventId);
+    if (!event) {
+      return res.status(404).json({ ...response, error: 'Evento no encontrado' });
+    }
+
+    const eventAtUtc = zonedDateTimeToUtc(
+      event.date,
+      event.time || '00:00',
+      normalizeTimeZone(event.timeZone || DEFAULT_TIMEZONE)
+    );
+    const reminder = getReminderForUser(event, req.user._id);
+    const reminderWindowStart = eventAtUtc ? new Date(eventAtUtc.getTime() - 30 * 60 * 1000) : null;
+    const reminderWindowEnd = eventAtUtc ? new Date(eventAtUtc.getTime() - 25 * 60 * 1000) : null;
+
+    return res.json({
+      ...response,
+      event: {
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        time: event.time || '00:00',
+        timeZone: normalizeTimeZone(event.timeZone || DEFAULT_TIMEZONE),
+        eventAtUtc: eventAtUtc ? eventAtUtc.toISOString() : null,
+        reminderEnabled: Boolean(reminder),
+        remindedAt: reminder?.notifiedAt ? new Date(reminder.notifiedAt).toISOString() : null,
+        reminderWindowStartUtc: reminderWindowStart ? reminderWindowStart.toISOString() : null,
+        reminderWindowEndUtc: reminderWindowEnd ? reminderWindowEnd.toISOString() : null
+      }
+    });
+  } catch (e) {
+    return res.status(500).json({ error: 'Error en diagnostico' });
+  }
+});
+
+router.post('/test', authMiddleware, async (req, res) => {
+  try {
+    if (!hasVapidConfig) return res.status(503).json({ error: 'Push no configurado' });
+
+    const user = await User.findById(req.user._id).select('name pushSubscription');
+    if (!user?.pushSubscription) {
+      return res.status(400).json({ error: 'No hay suscripcion push guardada para este usuario' });
+    }
+
+    const result = await sendPushToUser(user, {
+      title: 'Prueba de Socio',
+      body: 'Si ves esto en el movil, el canal push funciona.',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: `test-${user._id}-${Date.now()}`,
+      data: { url: '/' }
+    });
+
+    if (!result.ok) {
+      return res.status(502).json({
+        error: 'No se pudo enviar la notificacion de prueba',
+        detail: result
+      });
+    }
+
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ error: 'Error enviando prueba push' });
+  }
+});
+
+router.post('/check-now', authMiddleware, async (req, res) => {
+  try {
+    await checkNotifications();
+    return res.json({ ok: true, lastCheckAt });
+  } catch (e) {
+    return res.status(500).json({ error: 'Error ejecutando scheduler manualmente' });
+  }
+});
+
 async function checkNotifications() {
   try {
     if (!hasVapidConfig) return;
+    lastCheckAt = new Date().toISOString();
 
     const now = new Date();
     const windowStart = new Date(now.getTime() + 25 * 60 * 1000);
@@ -112,27 +261,18 @@ async function checkNotifications() {
           const user = await User.findById(reminder.userId);
           if (!user?.pushSubscription) continue;
 
-          try {
-            await webpush.sendNotification(
-              user.pushSubscription,
-              JSON.stringify({
-                title: 'Socio te recuerda',
-                body: `En 30 min: ${event.title}`,
-                icon: '/icons/icon-192.png',
-                badge: '/icons/icon-192.png',
-                tag: `agenda-${event.id}-${reminder.userId}`,
-                data: { url: '/' }
-              })
-            );
+          const result = await sendPushToUser(user, {
+            title: 'Socio te recuerda',
+            body: `En 30 min: ${event.title}`,
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-192.png',
+            tag: `agenda-${event.id}-${reminder.userId}`,
+            data: { url: '/' }
+          });
 
+          if (result.ok) {
             reminder.notifiedAt = new Date();
             console.log(`Notificacion enviada: ${event.title} a ${user.name}`);
-          } catch (error) {
-            console.error('Error enviando push:', error.message);
-
-            if (error.statusCode === 404 || error.statusCode === 410) {
-              await User.findByIdAndUpdate(reminder.userId, { pushSubscription: null });
-            }
           }
         }
       }
@@ -150,9 +290,12 @@ function startScheduler() {
     return;
   }
 
+  if (schedulerTimer) return;
+
+  schedulerStartedAt = new Date().toISOString();
   console.log('Scheduler de notificaciones iniciado (cada 5 min)');
   checkNotifications();
-  setInterval(checkNotifications, 5 * 60 * 1000);
+  schedulerTimer = setInterval(checkNotifications, 5 * 60 * 1000);
 }
 
 module.exports = { router, startScheduler };
