@@ -1,6 +1,5 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { v4: uuid } = require('crypto');
 const User = require('../models/User');
 const Space = require('../models/Space');
 const authMiddleware = require('../middleware/auth');
@@ -15,8 +14,9 @@ function makeToken(id) { return jwt.sign({ id }, process.env.JWT_SECRET, { expir
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ error: 'Faltan campos' });
-    if (await User.findOne({ email })) return res.status(400).json({ error: 'Email ya registrado' });
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!name || !normalizedEmail || !password) return res.status(400).json({ error: 'Faltan campos' });
+    if (await User.findOne({ email: normalizedEmail })) return res.status(400).json({ error: 'Email ya registrado' });
 
     // Create personal space
     const personalSpaceId = genId();
@@ -24,11 +24,11 @@ router.post('/register', async (req, res) => {
       id: personalSpaceId,
       name: 'Personal',
       type: 'personal',
-      members: [{ userId: 'pending', name, email, role: 'owner' }]
+      members: [{ userId: 'pending', name, email: normalizedEmail, role: 'owner' }]
     });
 
     const user = await User.create({
-      name, email, password,
+      name, email: normalizedEmail, password,
       spaces: [{ id: personalSpaceId, name: 'Personal', type: 'personal', role: 'owner' }]
     });
 
@@ -48,7 +48,8 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user || !await user.comparePassword(password)) {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
     }

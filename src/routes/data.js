@@ -1,6 +1,7 @@
 const express = require('express');
 const Space = require('../models/Space');
 const authMiddleware = require('../middleware/auth');
+const { normalizeTimeZone, serializeAgendaEvent } = require('../utils/agendaNotifications');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.get('/:spaceId', authMiddleware, async (req, res) => {
     res.json({
       compra: space.compra,
       tareas: space.tareas,
-      agenda: space.agenda,
+      agenda: space.agenda.map(event => serializeAgendaEvent(event, req.user._id)),
       notas: space.notas,
       members: space.members.map(m => ({ name: m.name, role: m.role })),
       inviteCode: space.inviteCode
@@ -84,7 +85,9 @@ router.post('/:spaceId/tareas', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const item = { id: genId(), name: req.body.name.trim(), done: false, addedBy: req.user.name, ts: new Date() };
+    const name = String(req.body.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Nombre requerido' });
+    const item = { id: genId(), name, done: false, addedBy: req.user.name, ts: new Date() };
     space.tareas.push(item);
     await space.save();
     res.json(item);
@@ -119,12 +122,22 @@ router.post('/:spaceId/agenda', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const { title, date, time, note } = req.body;
+    const { title, date, time, note, timeZone } = req.body;
     if (!title || !date) return res.status(400).json({ error: 'Título y fecha requeridos' });
-    const ev = { id: genId(), title, date, time: time||'', note: note||'', createdBy: req.user.name, ts: new Date() };
+    const ev = {
+      id: genId(),
+      title,
+      date,
+      time: time || '',
+      timeZone: normalizeTimeZone(timeZone),
+      note: note || '',
+      createdBy: req.user.name,
+      reminders: [],
+      ts: new Date()
+    };
     space.agenda.push(ev);
     await space.save();
-    res.json(ev);
+    res.json(serializeAgendaEvent(ev, req.user._id));
   } catch (e) { res.status(500).json({ error: 'Error' }); }
 });
 

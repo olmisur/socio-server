@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+const reminderSchema = new mongoose.Schema({
+  userId: String,
+  notifiedAt: { type: Date, default: null }
+}, { _id: false });
+
 const itemSchema = new mongoose.Schema({
   id: String,
   name: String,
@@ -13,8 +18,11 @@ const eventSchema = new mongoose.Schema({
   title: String,
   date: String,
   time: String,
+  timeZone: { type: String, default: process.env.APP_TIMEZONE || 'Europe/Madrid' },
   note: String,
   createdBy: String,
+  reminders: { type: [reminderSchema], default: [] },
+  // Legacy fields kept for in-place migration of existing documents.
   notifyUserId: { type: String, default: null },
   notified: { type: Boolean, default: false },
   ts: { type: Date, default: Date.now }

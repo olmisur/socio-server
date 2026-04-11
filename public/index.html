@@ -493,7 +493,8 @@ function renderAgenda(){
   }).join('');
 }
 async function delEvent(id){try{await api(`/api/data/${currentSpaceId}/agenda/${id}`,'DELETE');await loadSpaceData();renderAgenda();}catch(e){}}
-async function addEvent(title,date,time,note){if(!title||!date)return false;try{await api(`/api/data/${currentSpaceId}/agenda`,'POST',{title,date,time,note});await loadSpaceData();renderAgenda();return true;}catch(e){toast(e.message);return false;}}
+function getClientTimeZone(){try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Madrid';}catch(e){return 'Europe/Madrid';}}
+async function addEvent(title,date,time,note){if(!title||!date)return false;try{await api(`/api/data/${currentSpaceId}/agenda`,'POST',{title,date,time,note,timeZone:getClientTimeZone()});await loadSpaceData();renderAgenda();return true;}catch(e){toast(e.message);return false;}}
 const eventModal=document.getElementById('event-modal');
 document.getElementById('fab').onclick=()=>{
   if(currentTab==='agenda'){document.getElementById('ev-date').value=new Date().toISOString().slice(0,10);document.getElementById('ev-title').value='';document.getElementById('ev-time').value='';document.getElementById('ev-note').value='';eventModal.classList.add('open');}
@@ -685,19 +686,47 @@ boot();
 // PUSH NOTIFICATIONS
 let vapidKey = null;
 
+async function getVapidKey() {
+  if (vapidKey) return vapidKey;
+  const data = await api('/api/notif/vapid-key');
+  vapidKey = data.publicKey;
+  return vapidKey;
+}
+
+async function ensurePushSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  if (!token) return false;
+
+  try {
+    const key = await getVapidKey();
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+
+    if (!sub) {
+      if (Notification.permission !== 'granted') return false;
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(key)
+      });
+    }
+
+    return await saveSub(sub);
+  } catch (e) {
+    console.log('ensurePushSubscription error:', e);
+    return false;
+  }
+}
+
 async function initPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   if (!token) return;
   try {
-    const data = await api('/api/notif/vapid-key');
-    vapidKey = data.publicKey;
-    const reg = await navigator.serviceWorker.ready;
-    const existing = await reg.pushManager.getSubscription();
-    if (existing) { await saveSub(existing); }
+    await getVapidKey();
+    if (Notification.permission === 'granted') await ensurePushSubscription();
   } catch(e) { console.log('initPush error:', e); }
 }
 
-async function requestPushPermission() {
+async function requestPushPermissionLegacy() {
   if (!vapidKey) { 
     try {
       const data = await api('/api/notif/vapid-key');
@@ -735,14 +764,39 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+async function requestPushPermission() {
+  try {
+    await getVapidKey();
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      toast('Permiso denegado. Activalo en ajustes del navegador.');
+      return false;
+    }
+    const ok = await ensurePushSubscription();
+    if (ok) {
+      toast('Notificaciones activadas');
+      return true;
+    }
+    toast('Error guardando suscripcion');
+    return false;
+  } catch(e) {
+    console.log('pushPermission error:', e);
+    toast('Error activando notificaciones: ' + e.message);
+    return false;
+  }
+}
+
 async function toggleEventNotif(spaceId, eventId, btn) {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    toast('Push no disponible');
+    return;
+  }
   const isActive = btn.dataset.active === 'true';
   if (!isActive) {
-    const perm = Notification.permission;
-    if (perm !== 'granted') {
-      const ok = await requestPushPermission();
-      if (!ok) return;
-    }
+    const ok = Notification.permission === 'granted'
+      ? await ensurePushSubscription()
+      : await requestPushPermission();
+    if (!ok) return;
   }
   try {
     await api('/api/notif/event-notif', 'POST', { spaceId, eventId, enabled: !isActive });
@@ -767,7 +821,7 @@ window.renderAgenda = function() {
     const d = new Date(date + 'T12:00:00');
     const label = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
     return `<div><div class="date-label${date===today?' today':''}">${label}</div>${evs.map(ev => {
-      const hasNotif = !!ev.notifyUserId;
+      const hasNotif = !!ev.notifyEnabled;
       return `<div class="event-item">
         <div class="event-time">${ev.time||'—'}</div>
         <div class="event-body">
@@ -785,6 +839,6 @@ window.renderAgenda = function() {
 const _origStartApp = startApp;
 window.startApp = async function() {
   await _origStartApp();
-  initPush();
+  await initPush();
 };
 </script>
