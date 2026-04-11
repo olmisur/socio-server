@@ -175,3 +175,33 @@ body{font-family:var(--font);color:var(--text);display:flex;flex-direction:colum
 .loading-logo{font-size:40px;animation:bounce 1s infinite}
 @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .loading-text{font-family:var(--font-mono);font-size:13px;color:var(--text2)}
+/* Toast con undo */
+.toast{display:flex;align-items:center;gap:0}
+#toast-undo-btn{background:none;border:none;color:var(--accent2);font-family:var(--font);font-size:13px;cursor:pointer;margin-left:10px;padding:0;font-weight:600;white-space:nowrap;flex-shrink:0}
+/* Gastos */
+.gastos-summary{margin:12px 13px 6px;padding:12px 14px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.gastos-summary-label{font-size:11px;color:var(--text2)}
+.gastos-summary-amount{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--accent2)}
+.gastos-add-bar{display:flex;gap:6px;padding:0 13px 9px}
+.gastos-amount-input{width:80px;padding:9px 10px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border2);color:var(--text);font-size:14px;font-family:var(--font);outline:none}
+.gastos-amount-input:focus{border-color:rgba(124,106,247,0.4)}
+/* Recurrentes */
+.recurrentes-header{display:flex;align-items:center;justify-content:space-between;padding:12px 15px 6px}
+.recurrentes-title{font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.recurrentes-add-btn{font-size:13px;padding:3px 9px;border-radius:6px;background:var(--surface);border:1px solid var(--border2);color:var(--text2);cursor:pointer}
+.recurring-item{display:flex;align-items:center;gap:8px;padding:7px 13px}
+.recurring-badge{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--accent-dim);color:var(--accent2);white-space:nowrap;flex-shrink:0}
+.recurring-name{font-size:13px;color:var(--text2);flex:1}
+/* Onboarding */
+#onboarding-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity 0.3s}
+#onboarding-overlay.open{opacity:1;pointer-events:all}
+.onb-card{width:100%;max-width:360px;background:var(--bg2);border-radius:20px;padding:28px 22px 22px;text-align:center}
+.onb-icon{font-size:44px;margin-bottom:14px}
+.onb-title{font-family:var(--font-mono);font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px}
+.onb-body{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.onb-action-btn{width:100%;padding:11px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border2);color:var(--accent2);font-size:14px;cursor:pointer;font-family:var(--font);margin-bottom:10px}
+.onb-next-btn{width:100%;padding:13px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:white;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font)}
+.onb-skip-btn{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:var(--font);margin-top:10px}
+.onb-dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
+.onb-dot{width:7px;height:7px;border-radius:50%;background:var(--border2)}
+.onb-dot.active{background:var(--accent2)}

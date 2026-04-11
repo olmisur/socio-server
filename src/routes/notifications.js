@@ -4,6 +4,8 @@ const webpush = require('web-push');
 const User = require('../models/User');
 const Space = require('../models/Space');
 const SpaceEvent = require('../models/SpaceEvent');
+const SpaceItem = require('../models/SpaceItem');
+const SpaceRecurring = require('../models/SpaceRecurring');
 const authMiddleware = require('../middleware/auth');
 const logger = require('../utils/logger');
 const {
@@ -256,18 +258,106 @@ async function checkNotifications() {
   }
 }
 
+// ── Resumen matutino ───────────────────────────────────────────────────────────
+function getTodayMadrid() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: DEFAULT_TIMEZONE }); // YYYY-MM-DD
+}
+
+async function sendMorningSummary() {
+  try {
+    if (!hasVapidConfig) return;
+    const today = getTodayMadrid();
+    const events = await SpaceEvent.find({ date: today }).sort({ time: 1 });
+    if (!events.length) return;
+
+    // Agrupar eventos por usuario (un usuario puede estar en varios espacios)
+    const userEvents = {}; // userId → SpaceEvent[]
+    const spaceCache = {};
+    for (const ev of events) {
+      if (!spaceCache[ev.spaceId]) spaceCache[ev.spaceId] = await Space.findOne({ id: ev.spaceId });
+      const space = spaceCache[ev.spaceId];
+      if (!space) continue;
+      for (const member of space.members) {
+        if (!userEvents[member.userId]) userEvents[member.userId] = [];
+        userEvents[member.userId].push(ev);
+      }
+    }
+
+    for (const [userId, userEvs] of Object.entries(userEvents)) {
+      const user = await User.findById(userId);
+      if (!user?.pushSubscription) continue;
+      const list = userEvs.map(ev => `${ev.title}${ev.time ? ` (${ev.time})` : ''}`).join(', ');
+      const body = userEvs.length === 1
+        ? `Un evento hoy: ${list}`
+        : `${userEvs.length} eventos hoy: ${list}`;
+      const result = await sendPushToUser(user, {
+        title: 'Buenos días 👋',
+        body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        tag: `morning-${today}`,
+        data: { url: '/' }
+      });
+      if (result.ok) logger.info('Resumen matutino enviado', { userId, count: userEvs.length });
+    }
+  } catch (e) {
+    logger.error('Error en sendMorningSummary', { msg: e.message });
+  }
+}
+
+// ── Tareas recurrentes ─────────────────────────────────────────────────────────
+function matchesToday(pattern) {
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: DEFAULT_TIMEZONE }));
+  const dow = now.getDay();   // 0=dom..6=sáb
+  const dom = now.getDate();  // 1-31
+  if (pattern === 'daily') return true;
+  if (pattern.startsWith('weekly:')) return parseInt(pattern.split(':')[1]) === dow;
+  if (pattern.startsWith('monthly:')) return parseInt(pattern.split(':')[1]) === dom;
+  return false;
+}
+
+function genId() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+async function createRecurringInstances() {
+  try {
+    const today = getTodayMadrid();
+    const actives = await SpaceRecurring.find({ active: true });
+    for (const rec of actives) {
+      if (rec.lastCreated === today) continue; // ya creada hoy
+      if (!matchesToday(rec.pattern)) continue;
+      await SpaceItem.create({
+        spaceId: rec.spaceId, type: rec.type, id: genId(),
+        name: rec.name, done: false, addedBy: rec.addedBy
+      });
+      rec.lastCreated = today;
+      await rec.save();
+      logger.info('Tarea recurrente creada', { name: rec.name, spaceId: rec.spaceId });
+    }
+  } catch (e) {
+    logger.error('Error en createRecurringInstances', { msg: e.message });
+  }
+}
+
+// ── Arranque del scheduler ─────────────────────────────────────────────────────
 function startScheduler() {
   if (!hasVapidConfig) {
     logger.warn('Scheduler de notificaciones desactivado: faltan claves VAPID');
-    return;
+  } else {
+    if (!schedulerTask) {
+      schedulerStartedAt = new Date().toISOString();
+      schedulerTask = cron.schedule('*/5 * * * *', checkNotifications, { timezone: DEFAULT_TIMEZONE });
+      logger.info('Scheduler de notificaciones iniciado (cada 5 min, cron)');
+      checkNotifications();
+    }
+    // Resumen matutino a las 8:00
+    cron.schedule('0 8 * * *', sendMorningSummary, { timezone: DEFAULT_TIMEZONE });
+    logger.info('Resumen matutino activado (08:00)');
   }
-  if (schedulerTask) return;
 
-  schedulerStartedAt = new Date().toISOString();
-  // Ejecutar cada 5 minutos con node-cron (alineado al reloj, sin deriva)
-  schedulerTask = cron.schedule('*/5 * * * *', checkNotifications, { timezone: DEFAULT_TIMEZONE });
-  logger.info('Scheduler de notificaciones iniciado (cada 5 min, cron)');
-  checkNotifications(); // primera comprobación inmediata al arrancar
+  // Tareas recurrentes a las 00:05 (independiente de VAPID)
+  cron.schedule('5 0 * * *', createRecurringInstances, { timezone: DEFAULT_TIMEZONE });
+  logger.info('Scheduler de recurrentes iniciado (00:05)');
+  createRecurringInstances(); // primera pasada al arrancar
 }
 
 module.exports = { router, startScheduler };

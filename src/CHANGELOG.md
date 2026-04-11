@@ -5,6 +5,41 @@ Registro de todos los cambios, mejoras y correcciones de la app.
 
 ---
 
+## [2.8.0] — 2026-04-11
+### 🛍️ Producto/UX — Gastos, recurrentes, onboarding y undo
+
+**Control de gastos**
+- Nueva pestaña 💰 Gastos con resumen semanal y listado cronológico
+- `SpaceExpense` — colección dedicada `{ spaceId, id, amount, description, addedBy, ts }`
+- `public/js/gastos.js` — módulo frontend con `renderGastos`, añadir y borrado con undo
+- API REST: `POST /api/data/:spaceId/gastos`, `DELETE /api/data/:spaceId/gastos/:expId`
+- Chat IA extendido: acción `add_gasto` detecta importes y descripciones por voz/texto
+
+**Tareas recurrentes**
+- `SpaceRecurring` — colección `{ spaceId, id, name, type, pattern, lastCreated, active }`
+- Patrones: `daily`, `weekly:N` (0=dom…6=sáb), `monthly:N` (día 1–31)
+- Cron `5 0 * * *` crea instancias de tareas/compras cada medianoche según patrón
+- Modal de nueva recurrente con selector de frecuencia en vista Tareas
+- Chat IA extendido: acción `add_recurrente` con documentación de patrones en el prompt
+- API REST: `POST/DELETE /api/data/:spaceId/recurrentes`
+
+**Undo (deshacer)**
+- Borrado y marcado como hecho ahora son optimistas con ventana de 4 segundos
+- `toastWithUndo(msg, onUndo)` en `utils.js` — toast con botón "Deshacer"
+- `undoQueue` en `lists.js` y `gastos.js` — defer API call, cancelable
+- `index.html` actualizado: `<span id="toast-msg">` + `<button id="toast-undo-btn">`
+
+**Onboarding**
+- `public/js/onboarding.js` — guía de 3 pasos (bienvenida, espacios compartidos, notificaciones)
+- Solo aparece una vez: flag `socio_onboarded` en `localStorage`
+- Botón de acción en paso 3 activa notificaciones push directamente
+
+**Infra**
+- `scripts/migrate-collections.js` — script idempotente para migrar datos embebidos a nuevas colecciones
+- Nota de despliegue: ejecutar `node scripts/migrate-collections.js` tras el primer deploy de esta versión
+
+---
+
 ## [2.7.0] — 2026-04-11
 ### 🔧 Fiabilidad
 **Scheduler robusto**

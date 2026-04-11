@@ -1,14 +1,16 @@
 // Chat IA y escáner de ticket
 
 function getCtx() {
-  const c = spaceData.compra || [], t = spaceData.tareas || [], a = spaceData.agenda || [];
-  return `\n[${getSpaceName()}] Compra: ${c.length ? c.map(x => (x.done ? '[✓] ' : '') + x.name).join(', ') : 'vacía'} | Tareas: ${t.length ? t.map(x => (x.done ? '[✓] ' : '') + x.name).join(', ') : 'vacías'} | Agenda: ${a.length ? a.slice(0, 5).map(e => `${e.date} ${e.time || ''} ${e.title}`).join('; ') : 'sin eventos'}`;
+  const c = spaceData.compra || [], t = spaceData.tareas || [], a = spaceData.agenda || [], g = spaceData.gastos || [];
+  const gTotal = g.reduce((s, x) => s + x.amount, 0);
+  return `\n[${getSpaceName()}] Compra: ${c.length ? c.map(x => (x.done ? '[✓] ' : '') + x.name).join(', ') : 'vacía'} | Tareas: ${t.length ? t.map(x => (x.done ? '[✓] ' : '') + x.name).join(', ') : 'vacías'} | Agenda: ${a.length ? a.slice(0, 5).map(e => `${e.date} ${e.time || ''} ${e.title}`).join('; ') : 'sin eventos'} | Gastos totales: ${gTotal.toFixed(2)}€`;
 }
 
 const SYS = `Eres "Socio", asistente personal en español de España. Claro, cordial y eficiente.
-SOLO responde con JSON válido sin texto fuera. Formato: {"action":"...","items":[],"event":{},"note":{},"message":"..."}
-ACCIONES: add_compra(items[]), add_tarea(items[]), add_event(event:{title,date:YYYY-MM-DD,time:HH:MM,note}), add_nota(note:{title,body}), remove_compra(items[]), remove_tarea(items[]), done_compra(items[]), done_tarea(items[]), none.
-message: máx 2 frases breves, claras y cordiales. Usa un tono natural y más formal. Evita "tío", "venga", "dale" y otras coletillas coloquiales. Ejemplo: "Perfecto. He apuntado leche en tu lista de compra."
+SOLO responde con JSON válido sin texto fuera. Formato: {"action":"...","items":[],"event":{},"note":{},"gasto":{},"recurrente":{},"message":"..."}
+ACCIONES: add_compra(items[]), add_tarea(items[]), add_event(event:{title,date:YYYY-MM-DD,time:HH:MM,note}), add_nota(note:{title,body}), add_gasto(gasto:{amount,description}), add_recurrente(recurrente:{name,type:'tareas'|'compra',pattern}), remove_compra(items[]), remove_tarea(items[]), done_compra(items[]), done_tarea(items[]), none.
+PATRONES recurrente: 'daily'=cada día, 'weekly:1'=lunes, 'weekly:2'=martes, 'weekly:3'=miércoles, 'weekly:4'=jueves, 'weekly:5'=viernes, 'weekly:6'=sábado, 'weekly:0'=domingo, 'monthly:N'=día N de cada mes.
+message: máx 2 frases breves, claras y cordiales. Sin coletillas coloquiales.
 Hoy: ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. ISO: ${new Date().toISOString().slice(0, 10)}.`;
 
 function addMsg(html, role, thinking = false, isHtml = false) {
@@ -90,6 +92,16 @@ async function doAction(p) {
     await api(`/api/data/${currentSpaceId}/notas`, 'POST', { title: note.title || '', body: note.body || '' });
     await loadSpaceData();
     if (currentTab === 'notas') renderNotas();
+  }
+  else if (action === 'add_gasto' && p.gasto?.amount && p.gasto?.description) {
+    await api(`/api/data/${currentSpaceId}/gastos`, 'POST', { amount: p.gasto.amount, description: p.gasto.description });
+    await loadSpaceData();
+    if (currentTab === 'gastos') renderGastos();
+  }
+  else if (action === 'add_recurrente' && p.recurrente?.name && p.recurrente?.pattern) {
+    await api(`/api/data/${currentSpaceId}/recurrentes`, 'POST', { name: p.recurrente.name, type: p.recurrente.type || 'tareas', pattern: p.recurrente.pattern });
+    await loadSpaceData();
+    if (currentTab === 'tareas') renderList('tareas');
   }
 }
 

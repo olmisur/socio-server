@@ -60,6 +60,7 @@
     <button class="tab" data-view="tareas"><span>✅</span> Tareas</button>
     <button class="tab" data-view="agenda"><span>📅</span> Agenda</button>
     <button class="tab" data-view="notas"><span>📝</span> Notas</button>
+    <button class="tab" data-view="gastos"><span>💰</span> Gastos</button>
   </div>
 
   <div id="views">
@@ -87,6 +88,11 @@
       <div class="add-bar"><input class="add-input" id="tareas-input" placeholder="Nueva tarea..."><button class="add-btn" id="tareas-add-btn">+ Añadir</button></div>
       <div class="clear-bar"><button class="clear-done-btn" onclick="clearDone('tareas')">Limpiar hechas ✓</button></div>
       <div class="items-list" id="tareas-list"></div>
+      <div class="recurrentes-header">
+        <span>Tareas recurrentes</span>
+        <button class="clear-done-btn" id="rec-open-btn">+ Nueva</button>
+      </div>
+      <div id="recurrentes-list"></div>
     </div>
 
     <div class="view" id="agenda-view">
@@ -97,6 +103,20 @@
     <div class="view" id="notas-view">
       <div class="section-header"><span class="section-title">Notas rápidas</span><span class="space-tag" id="notas-space-tag"></span></div>
       <div id="notas-list"></div>
+    </div>
+
+    <div class="view" id="gastos-view">
+      <div class="section-header"><span class="section-title">Control de gastos</span><span class="space-tag" id="gastos-space-tag"></span></div>
+      <div class="gastos-summary">
+        <div class="gastos-summary-label">Esta semana</div>
+        <div class="gastos-summary-amount" id="gastos-week-total">0,00 €</div>
+      </div>
+      <div class="gastos-add-bar">
+        <input class="add-input" id="gastos-desc" placeholder="Descripción...">
+        <input class="gastos-amount-input add-input" id="gastos-amount" type="number" min="0" step="0.01" placeholder="€">
+        <button class="add-btn" id="gastos-add-btn">+ Añadir</button>
+      </div>
+      <div class="items-list" id="gastos-list"></div>
     </div>
   </div>
 
@@ -184,7 +204,49 @@
   <button id="mic-cancel">Cancelar</button>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- Modal: nueva tarea recurrente -->
+<div class="modal-overlay" id="recurring-modal">
+  <div class="modal">
+    <h3>Nueva tarea recurrente</h3>
+    <div class="modal-field"><label class="modal-label">Nombre</label><input class="modal-input" id="rec-name" placeholder="Ej: Sacar la basura"></div>
+    <div class="modal-field">
+      <label class="modal-label">Frecuencia</label>
+      <select class="modal-input" id="rec-pattern">
+        <option value="daily">Cada día</option>
+        <option value="weekly:1">Cada lunes</option>
+        <option value="weekly:2">Cada martes</option>
+        <option value="weekly:3">Cada miércoles</option>
+        <option value="weekly:4">Cada jueves</option>
+        <option value="weekly:5">Cada viernes</option>
+        <option value="weekly:6">Cada sábado</option>
+        <option value="weekly:0">Cada domingo</option>
+        <option value="monthly:1">Día 1 de cada mes</option>
+        <option value="monthly:15">Día 15 de cada mes</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="rec-modal-cancel">Cancelar</button>
+      <button class="modal-save" id="rec-modal-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding overlay -->
+<div id="onboarding-overlay">
+  <div class="onb-card">
+    <div class="onb-icon" id="onb-icon">🤝</div>
+    <div class="onb-title" id="onb-title">Bienvenido</div>
+    <div class="onb-body" id="onb-body"></div>
+    <button class="onb-action-btn" id="onb-action-btn" style="display:none"></button>
+    <div class="onb-dots" id="onb-dots"></div>
+    <div class="onb-btns">
+      <button class="onb-skip-btn" id="onb-skip-btn">Saltar</button>
+      <button class="onb-next-btn" id="onb-next-btn">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-msg"></span><button id="toast-undo-btn" class="toast-undo-btn" style="display:none">Deshacer</button></div>
 
 <!-- Módulos JS (orden importante: estado → utilidades → dominio → app) -->
 <script src="js/state.js"></script>
@@ -194,6 +256,8 @@
 <script src="js/lists.js"></script>
 <script src="js/agenda.js"></script>
 <script src="js/notas.js"></script>
+<script src="js/gastos.js"></script>
+<script src="js/onboarding.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>

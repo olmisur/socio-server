@@ -24,7 +24,7 @@ function renderSpaces() {
     bar.insertBefore(btn, addBtn);
   });
   document.getElementById('space-label').textContent = getSpaceName();
-  ['compra', 'tareas', 'agenda', 'notas'].forEach(t => {
+  ['compra', 'tareas', 'agenda', 'notas', 'gastos'].forEach(t => {
     const tag = document.getElementById(`${t}-space-tag`);
     if (tag) { tag.textContent = getSpaceName(); tag.className = `space-tag ${getSpaceType()}`; }
   });
@@ -49,6 +49,7 @@ function renderAll() {
   renderList('tareas');
   renderAgenda();
   renderNotas();
+  renderGastos();
 }
 
 async function startApp() {
@@ -61,6 +62,7 @@ async function startApp() {
   addMsg(`¡Buenas, ${currentUser.name.split(' ')[0]}! 🤝 Estás en <strong>${getSpaceName()}</strong>.<br>Pulsa <strong>🎙️ libre</strong> para el modo manos libres — escucha continua sin tocar nada.`, 'bot', false, true);
   addSuggs(['Apunta mantequilla y leche', 'Cita médica mañana 10h', '¿Qué tengo pendiente?', 'Añade tarea: llamar al banco']);
   await initPush();
+  showOnboarding();
 }
 
 // Espacios: modal de nuevo espacio e invitación
@@ -122,6 +124,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (currentTab === 'tareas') renderList('tareas');
     if (currentTab === 'agenda') renderAgenda();
     if (currentTab === 'notas') renderNotas();
+    if (currentTab === 'gastos') renderGastos();
   });
 });
 
@@ -129,6 +132,22 @@ document.querySelectorAll('.tab').forEach(btn => {
 document.getElementById('fab').onclick = () => {
   if (currentTab === 'agenda') openEventModal(null);
   else if (currentTab === 'notas') openNote(null);
+};
+
+// Modal: nueva tarea recurrente
+document.getElementById('rec-modal-cancel').onclick = () => document.getElementById('recurring-modal').classList.remove('open');
+document.getElementById('rec-modal-save').onclick = async () => {
+  const name = document.getElementById('rec-name').value.trim();
+  const pattern = document.getElementById('rec-pattern').value;
+  if (!name) { toast('Escribe un nombre'); return; }
+  try {
+    await api(`/api/data/${currentSpaceId}/recurrentes`, 'POST', { name, type: 'tareas', pattern });
+    await loadSpaceData();
+    renderList('tareas');
+    document.getElementById('recurring-modal').classList.remove('open');
+    document.getElementById('rec-name').value = '';
+    toast('Recordatorio creado ↩');
+  } catch (e) { toast(e.message); }
 };
 
 // Boot

@@ -2,7 +2,7 @@
 let token = localStorage.getItem('socio_token');
 let currentUser = null;
 let currentSpaceId = null;
-let spaceData = { compra: [], tareas: [], agenda: [], notas: [], members: [], inviteCode: null };
+let spaceData = { compra: [], tareas: [], agenda: [], notas: [], gastos: [], recurrentes: [], members: [], inviteCode: null };
 let pollTimer = null;
 let chatHistory = [];
 let currentTab = 'chat';

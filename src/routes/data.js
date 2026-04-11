@@ -3,6 +3,8 @@ const Space = require('../models/Space');
 const SpaceItem = require('../models/SpaceItem');
 const SpaceEvent = require('../models/SpaceEvent');
 const SpaceNote = require('../models/SpaceNote');
+const SpaceExpense = require('../models/SpaceExpense');
+const SpaceRecurring = require('../models/SpaceRecurring');
 const authMiddleware = require('../middleware/auth');
 const { normalizeTimeZone, serializeAgendaEvent } = require('../utils/agendaNotifications');
 const {
@@ -34,11 +36,13 @@ router.get('/:spaceId', authMiddleware, async (req, res) => {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
 
-    const [compra, tareas, agenda, notas] = await Promise.all([
+    const [compra, tareas, agenda, notas, gastos, recurrentes] = await Promise.all([
       SpaceItem.find({ spaceId: space.id, type: 'compra' }).sort({ ts: 1 }),
       SpaceItem.find({ spaceId: space.id, type: 'tareas' }).sort({ ts: 1 }),
       SpaceEvent.find({ spaceId: space.id }).sort({ date: 1, time: 1 }),
-      SpaceNote.find({ spaceId: space.id }).sort({ ts: 1 })
+      SpaceNote.find({ spaceId: space.id }).sort({ ts: 1 }),
+      SpaceExpense.find({ spaceId: space.id }).sort({ ts: -1 }),
+      SpaceRecurring.find({ spaceId: space.id, active: true }).sort({ ts: 1 })
     ]);
 
     return res.json({
@@ -46,6 +50,8 @@ router.get('/:spaceId', authMiddleware, async (req, res) => {
       tareas,
       agenda: agenda.map(ev => serializeAgendaEvent(ev, req.user._id)),
       notas,
+      gastos,
+      recurrentes,
       members: space.members.map(m => ({ name: m.name, role: m.role })),
       inviteCode: space.inviteCode
     });
@@ -290,6 +296,77 @@ router.delete('/:spaceId/notas/:notaId', authMiddleware, async (req, res) => {
 
     const noteId = requiredString(req.params.notaId, 'Nota invalida', { min: 3, max: 120 });
     await SpaceNote.deleteOne({ spaceId: space.id, id: noteId });
+    return res.json({ ok: true });
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
+});
+
+// ── GASTOS ─────────────────────────────────────────────────────────────────────
+router.post('/:spaceId/gastos', authMiddleware, async (req, res) => {
+  try {
+    const space = await getSpace(req.params.spaceId, req.user._id);
+    if (!space) return res.status(403).json({ error: 'Sin acceso' });
+
+    const body = ensureObject(req.body);
+    const description = requiredString(body.description, 'Descripción requerida', { min: 1, max: 160 });
+    const rawAmount = parseFloat(body.amount);
+    if (!isFinite(rawAmount) || rawAmount <= 0) return res.status(400).json({ error: 'Importe inválido' });
+    const amount = Math.round(rawAmount * 100) / 100;
+    const category = optionalString(body.category, 'Categoría inválida', { max: 60 }) || 'general';
+
+    const expense = await SpaceExpense.create({ spaceId: space.id, id: genId(), amount, description, category, addedBy: req.user.name });
+    return res.json(expense);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
+});
+
+router.delete('/:spaceId/gastos/:expId', authMiddleware, async (req, res) => {
+  try {
+    const space = await getSpace(req.params.spaceId, req.user._id);
+    if (!space) return res.status(403).json({ error: 'Sin acceso' });
+
+    const expId = requiredString(req.params.expId, 'Gasto inválido', { min: 3, max: 120 });
+    await SpaceExpense.deleteOne({ spaceId: space.id, id: expId });
+    return res.json({ ok: true });
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
+});
+
+// ── RECURRENTES ────────────────────────────────────────────────────────────────
+const VALID_PATTERNS = /^(daily|weekly:[0-6]|monthly:([1-9]|[12]\d|3[01]))$/;
+
+router.post('/:spaceId/recurrentes', authMiddleware, async (req, res) => {
+  try {
+    const space = await getSpace(req.params.spaceId, req.user._id);
+    if (!space) return res.status(403).json({ error: 'Sin acceso' });
+
+    const body = ensureObject(req.body);
+    const name = requiredString(body.name, 'Nombre requerido', { min: 1, max: 160 });
+    const type = body.type === 'compra' ? 'compra' : 'tareas';
+    const pattern = requiredString(body.pattern, 'Patrón inválido', { min: 4, max: 20 });
+    if (!VALID_PATTERNS.test(pattern)) return res.status(400).json({ error: 'Patrón inválido' });
+
+    const recurring = await SpaceRecurring.create({ spaceId: space.id, id: genId(), name, type, pattern, addedBy: req.user.name });
+    return res.json(recurring);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
+});
+
+router.delete('/:spaceId/recurrentes/:recId', authMiddleware, async (req, res) => {
+  try {
+    const space = await getSpace(req.params.spaceId, req.user._id);
+    if (!space) return res.status(403).json({ error: 'Sin acceso' });
+
+    const recId = requiredString(req.params.recId, 'Recurrente inválido', { min: 3, max: 120 });
+    await SpaceRecurring.deleteOne({ spaceId: space.id, id: recId });
     return res.json({ ok: true });
   } catch (e) {
     if (e?.status) return safeError(res, e);
