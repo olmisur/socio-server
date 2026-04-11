@@ -1,125 +1,109 @@
-# 🤝 Socio - Guía de instalación en EasyPanel
+# Socio
 
-## Lo que necesitas
-- Tu VPS con EasyPanel instalado
-- MongoDB (lo instalamos en EasyPanel)
+Asistente personal y colaborativo para compra, tareas, agenda, notas, chat con IA y notificaciones push.
 
----
+## Estado actual
 
-## PASO 1 — Instalar MongoDB en EasyPanel
+La app ya incluye:
+- Autenticacion con JWT y espacios `Personal`, `Familia` y `Negocio`
+- Listas compartidas de compra y tareas
+- Agenda con creacion, edicion y recordatorios push por usuario
+- Notas rapidas
+- Chat con IA, voz, modo manos libres y escaneo de tickets
+- Gastos compartidos con resumen semanal
+- Tareas recurrentes
+- Onboarding y acciones con deshacer
 
-1. Entra en EasyPanel → **"+ New Service"**
-2. Busca **"MongoDB"** y selecciónalo
-3. Dale un nombre: `socio-mongo`
-4. Pulsa **Deploy**
-5. Cuando arranque, ve a su configuración y **copia la URL de conexión** (algo como `mongodb://socio-mongo:27017`)
+## Documentacion
 
----
+- Roadmap vivo: [ROADMAP.md](/C:/Users/huert/OneDrive/Documentos/GitHub/socio-server/ROADMAP.md)
+- Historial de cambios: [src/CHANGELOG.md](/C:/Users/huert/OneDrive/Documentos/GitHub/socio-server/src/CHANGELOG.md)
 
-## PASO 2 — Crear la app Socio
+## Despliegue en EasyPanel
 
-1. En EasyPanel → **"+ New Service"** → **"App"**
-2. Nombre: `socio`
-3. En **"Source"** selecciona **"Upload"** y sube el ZIP de este proyecto
+### Requisitos
+- VPS con EasyPanel
+- MongoDB desplegado en EasyPanel
 
-   O si prefieres con Git:
-   - Sube este código a un repo de GitHub (privado)
-   - En EasyPanel conecta tu GitHub y selecciona el repo
+### Variables de entorno
 
-4. EasyPanel detectará el `Dockerfile` automáticamente
-
----
-
-## PASO 3 — Configurar las variables de entorno
-
-En la configuración de tu app `socio` en EasyPanel, ve a **"Environment"** y añade:
-
-```
+```env
 MONGO_URI=mongodb://socio-mongo:27017/sociodb
-JWT_SECRET=pon_aqui_una_clave_secreta_muy_larga_y_aleatoria_min_32_chars
+JWT_SECRET=pon_aqui_una_clave_secreta_muy_larga_y_aleatoria
 ANTHROPIC_API_KEY=sk-ant-tu-clave-aqui
+VAPID_PUBLIC_KEY=tu_clave_publica_vapid
+VAPID_PRIVATE_KEY=tu_clave_privada_vapid
+VAPID_EMAIL=mailto:tu@email.com
 PORT=3000
 NODE_ENV=production
 ```
 
-⚠️ **IMPORTANTE**: El `JWT_SECRET` debe ser una cadena larga y aleatoria. Puedes generar una así:
+### Pasos
+1. Crea un servicio MongoDB en EasyPanel.
+2. Crea la app `socio` desde ZIP o Git.
+3. Configura las variables de entorno.
+4. Despliega la app y asigna dominio.
+5. Si vienes de una version antigua con datos embebidos, ejecuta `node scripts/migrate-collections.js`.
+
+## Uso rapido
+
+1. Registrate con email y contrasena.
+2. Crea o unete a un espacio con codigo de invitacion.
+3. Abre la app desde el movil y acepta notificaciones.
+4. Instalala como PWA desde Chrome.
+
+## Desarrollo local
+
+```bash
+npm install
+npm run dev
 ```
-openssl rand -base64 32
+
+Tests:
+
+```bash
+npm test
 ```
 
----
+## Estructura actual
 
-## PASO 4 — Configurar el dominio
-
-1. En la config de tu app → **"Domains"**
-2. Añade tu dominio: `socio.tudominio.com`
-3. EasyPanel configurará HTTPS automáticamente con Let's Encrypt
-
-Si no tienes dominio propio, EasyPanel te da un subdominio gratuito tipo:
-`socio.tu-easypanel.com`
-
----
-
-## PASO 5 — Deploy
-
-1. Pulsa **"Deploy"**
-2. Espera 1-2 minutos a que construya el contenedor
-3. Abre tu dominio → verás la pantalla de Socio
-4. **Regístrate** con tu email y contraseña
-5. ¡Listo!
-
----
-
-## Instalar en el móvil
-
-1. Abre Chrome en Android → ve a tu URL de Socio
-2. Menú (⋮) → **"Instalar aplicación"**
-3. ¡Aparece como app en tu teléfono!
-
----
-
-## Espacios disponibles
-
-Al registrarte se crea automáticamente tu espacio **Personal**.
-Para crear más espacios:
-- Pulsa **"+"** en la barra de espacios
-- Elige **Familia** o **Negocio**
-- Comparte el **código de invitación** con tu pareja o equipo
-- Ellos entran en Socio → **"+"** → introducen el código
-
----
-
-## Actualizar la app
-
-Si quieres actualizar Socio con nuevas funciones:
-1. Sube el nuevo ZIP en EasyPanel
-2. Pulsa **"Redeploy"**
-3. En 1 minuto está actualizado para todos
-
----
-
-## Estructura del proyecto
-
-```
+```text
 socio-server/
-├── Dockerfile          ← Para EasyPanel
-├── docker-compose.yml  ← Para pruebas locales
-├── package.json
-├── .env.example        ← Copia como .env para desarrollo local
-├── src/
-│   ├── server.js       ← Servidor principal
-│   ├── models/
-│   │   ├── User.js     ← Modelo de usuario
-│   │   └── Space.js    ← Modelo de espacio (datos)
-│   ├── routes/
-│   │   ├── auth.js     ← Login, registro, espacios
-│   │   ├── data.js     ← CRUD compra, tareas, agenda, notas
-│   │   └── ai.js       ← Proxy para Anthropic API
-│   └── middleware/
-│       └── auth.js     ← Verificación JWT
-└── public/
-    ├── index.html      ← Frontend completo
-    ├── manifest.json   ← PWA config
-    ├── sw.js           ← Service Worker
-    └── icons/          ← Iconos de la app
+|-- public/
+|   |-- css/
+|   |-- js/
+|   |   |-- agenda.js
+|   |   |-- app.js
+|   |   |-- auth.js
+|   |   |-- chat.js
+|   |   |-- gastos.js
+|   |   |-- lists.js
+|   |   |-- notas.js
+|   |   |-- onboarding.js
+|   |   |-- push.js
+|   |   |-- state.js
+|   |   |-- utils.js
+|   |   `-- voice.js
+|   |-- index.html
+|   |-- manifest.json
+|   `-- sw.js
+|-- scripts/
+|   `-- migrate-collections.js
+|-- src/
+|   |-- middleware/
+|   |-- models/
+|   |   |-- Space.js
+|   |   |-- SpaceEvent.js
+|   |   |-- SpaceExpense.js
+|   |   |-- SpaceItem.js
+|   |   |-- SpaceNote.js
+|   |   |-- SpaceRecurring.js
+|   |   `-- User.js
+|   |-- routes/
+|   |-- utils/
+|   |-- app.js
+|   `-- server.js
+|-- test/
+|-- ROADMAP.md
+`-- package.json
 ```
