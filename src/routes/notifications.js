@@ -11,6 +11,12 @@ const {
   setReminderForUser,
   zonedDateTimeToUtc
 } = require('../utils/agendaNotifications');
+const {
+  ensureObject,
+  requiredBoolean,
+  requiredString,
+  safeError
+} = require('../utils/requestValidation');
 
 const router = express.Router();
 const hasVapidConfig = Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
@@ -27,7 +33,8 @@ if (hasVapidConfig) {
 }
 
 async function getSpaceForUser(spaceId, userId) {
-  const space = await Space.findOne({ id: spaceId });
+  const safeSpaceId = requiredString(spaceId, 'Espacio invalido', { min: 3, max: 120 });
+  const space = await Space.findOne({ id: safeSpaceId });
   if (!space) return null;
 
   const isMember = space.members.some(member => member.userId === String(userId));
@@ -90,7 +97,8 @@ router.post('/subscribe', authMiddleware, async (req, res) => {
   try {
     if (!hasVapidConfig) return res.status(503).json({ error: 'Push no configurado' });
 
-    const { subscription } = req.body;
+    const body = ensureObject(req.body);
+    const subscription = ensureObject(body.subscription, 'Suscripcion invalida');
     const isValidSubscription = Boolean(
       subscription?.endpoint &&
       subscription?.keys?.p256dh &&
@@ -104,6 +112,7 @@ router.post('/subscribe', authMiddleware, async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { pushSubscription: subscription });
     return res.json({ ok: true });
   } catch (e) {
+    if (e?.status) return safeError(res, e);
     return res.status(500).json({ error: 'Error guardando suscripcion' });
   }
 });
@@ -112,7 +121,10 @@ router.post('/event-notif', authMiddleware, async (req, res) => {
   try {
     if (!hasVapidConfig) return res.status(503).json({ error: 'Push no configurado' });
 
-    const { spaceId, eventId, enabled } = req.body;
+    const body = ensureObject(req.body);
+    const spaceId = requiredString(body.spaceId, 'Espacio invalido', { min: 3, max: 120 });
+    const eventId = requiredString(body.eventId, 'Evento invalido', { min: 3, max: 120 });
+    const enabled = requiredBoolean(body.enabled, 'Valor de aviso invalido');
     const space = await getSpaceForUser(spaceId, req.user._id);
 
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
@@ -125,6 +137,7 @@ router.post('/event-notif', authMiddleware, async (req, res) => {
 
     return res.json({ ok: true, enabled: Boolean(enabled) });
   } catch (e) {
+    if (e?.status) return safeError(res, e);
     return res.status(500).json({ error: 'Error' });
   }
 });
@@ -142,7 +155,8 @@ router.get('/debug', authMiddleware, async (req, res) => {
       user: summarizeSubscription(user?.pushSubscription)
     };
 
-    const { spaceId, eventId } = req.query;
+    const spaceId = req.query.spaceId ? requiredString(req.query.spaceId, 'Espacio invalido', { min: 3, max: 120 }) : '';
+    const eventId = req.query.eventId ? requiredString(req.query.eventId, 'Evento invalido', { min: 3, max: 120 }) : '';
     if (!spaceId || !eventId) {
       return res.json(response);
     }
@@ -182,6 +196,7 @@ router.get('/debug', authMiddleware, async (req, res) => {
       }
     });
   } catch (e) {
+    if (e?.status) return safeError(res, e);
     return res.status(500).json({ error: 'Error en diagnostico' });
   }
 });

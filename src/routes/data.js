@@ -2,190 +2,301 @@ const express = require('express');
 const Space = require('../models/Space');
 const authMiddleware = require('../middleware/auth');
 const { normalizeTimeZone, serializeAgendaEvent } = require('../utils/agendaNotifications');
+const {
+  ensureObject,
+  hhmmTime,
+  isoDate,
+  optionalString,
+  requiredBoolean,
+  requiredString,
+  safeError
+} = require('../utils/requestValidation');
 
 const router = express.Router();
 
 function genId() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
-// Verify user has access to space
 async function getSpace(spaceId, userId) {
-  const space = await Space.findOne({ id: spaceId });
+  const safeSpaceId = requiredString(spaceId, 'Espacio invalido', { min: 3, max: 120 });
+  const space = await Space.findOne({ id: safeSpaceId });
   if (!space) return null;
-  const isMember = space.members.find(m => m.userId === userId.toString());
+
+  const isMember = space.members.find(member => member.userId === userId.toString());
   return isMember ? space : null;
 }
 
-// GET all data for a space
 router.get('/:spaceId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    res.json({
+
+    return res.json({
       compra: space.compra,
       tareas: space.tareas,
       agenda: space.agenda.map(event => serializeAgendaEvent(event, req.user._id)),
       notas: space.notas,
-      members: space.members.map(m => ({ name: m.name, role: m.role })),
+      members: space.members.map(member => ({ name: member.name, role: member.role })),
       inviteCode: space.inviteCode
     });
   } catch (e) {
-    res.status(500).json({ error: 'Error al obtener datos' });
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error al obtener datos' });
   }
 });
 
-// ====== COMPRA ======
 router.post('/:spaceId/compra', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const { name } = req.body;
-    if (!name?.trim()) return res.status(400).json({ error: 'Nombre requerido' });
-    const item = { id: genId(), name: name.trim().toLowerCase(), done: false, addedBy: req.user.name, ts: new Date() };
+
+    const body = ensureObject(req.body);
+    const name = requiredString(body.name, 'Nombre requerido', { min: 1, max: 120 }).toLowerCase();
+    const item = { id: genId(), name, done: false, addedBy: req.user.name, ts: new Date() };
+
     space.compra.push(item);
     await space.save();
-    res.json(item);
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json(item);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.patch('/:spaceId/compra/:itemId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const item = space.compra.find(i => i.id === req.params.itemId);
+
+    const itemId = requiredString(req.params.itemId, 'Item invalido', { min: 3, max: 120 });
+    const body = ensureObject(req.body);
+    const done = requiredBoolean(body.done, 'Estado invalido');
+    const item = space.compra.find(entry => entry.id === itemId);
+
     if (!item) return res.status(404).json({ error: 'Item no encontrado' });
-    if (req.body.done !== undefined) item.done = req.body.done;
+
+    item.done = done;
     await space.save();
-    res.json(item);
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json(item);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.delete('/:spaceId/compra/:itemId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    space.compra = space.compra.filter(i => i.id !== req.params.itemId);
+
+    const itemId = requiredString(req.params.itemId, 'Item invalido', { min: 3, max: 120 });
+    space.compra = space.compra.filter(item => item.id !== itemId);
     await space.save();
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json({ ok: true });
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.delete('/:spaceId/compra', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    if (req.query.done === 'true') space.compra = space.compra.filter(i => !i.done);
+
+    if (req.query.done != null && req.query.done !== 'true') {
+      return res.status(400).json({ error: 'Filtro invalido' });
+    }
+
+    if (req.query.done === 'true') space.compra = space.compra.filter(item => !item.done);
     else space.compra = [];
+
     await space.save();
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json({ ok: true });
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
-// ====== TAREAS ======
 router.post('/:spaceId/tareas', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const name = String(req.body.name || '').trim();
-    if (!name) return res.status(400).json({ error: 'Nombre requerido' });
+
+    const body = ensureObject(req.body);
+    const name = requiredString(body.name, 'Nombre requerido', { min: 1, max: 160 });
     const item = { id: genId(), name, done: false, addedBy: req.user.name, ts: new Date() };
+
     space.tareas.push(item);
     await space.save();
-    res.json(item);
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json(item);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.patch('/:spaceId/tareas/:itemId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const item = space.tareas.find(i => i.id === req.params.itemId);
+
+    const itemId = requiredString(req.params.itemId, 'Tarea invalida', { min: 3, max: 120 });
+    const body = ensureObject(req.body);
+    const item = space.tareas.find(entry => entry.id === itemId);
+
     if (!item) return res.status(404).json({ error: 'No encontrado' });
-    if (req.body.done !== undefined) item.done = req.body.done;
-    if (req.body.name) item.name = req.body.name;
+
+    const hasDone = Object.prototype.hasOwnProperty.call(body, 'done');
+    const hasName = Object.prototype.hasOwnProperty.call(body, 'name');
+    if (!hasDone && !hasName) return res.status(400).json({ error: 'Sin cambios validos' });
+
+    if (hasDone) item.done = requiredBoolean(body.done, 'Estado invalido');
+    if (hasName) item.name = requiredString(body.name, 'Nombre requerido', { min: 1, max: 160 });
+
     await space.save();
-    res.json(item);
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json(item);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.delete('/:spaceId/tareas/:itemId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    space.tareas = space.tareas.filter(i => i.id !== req.params.itemId);
+
+    const itemId = requiredString(req.params.itemId, 'Tarea invalida', { min: 3, max: 120 });
+    space.tareas = space.tareas.filter(item => item.id !== itemId);
     await space.save();
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json({ ok: true });
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
-// ====== AGENDA ======
 router.post('/:spaceId/agenda', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const { title, date, time, note, timeZone } = req.body;
-    if (!title || !date) return res.status(400).json({ error: 'Título y fecha requeridos' });
-    const ev = {
+
+    const body = ensureObject(req.body);
+    const title = requiredString(body.title, 'Titulo y fecha requeridos', { min: 1, max: 160 });
+    const date = isoDate(body.date, 'Fecha invalida');
+    const time = hhmmTime(body.time, 'Hora invalida');
+    const note = optionalString(body.note, 'Nota invalida', { max: 500 });
+    const timeZone = normalizeTimeZone(body.timeZone);
+
+    const event = {
       id: genId(),
       title,
       date,
-      time: time || '',
-      timeZone: normalizeTimeZone(timeZone),
-      note: note || '',
+      time,
+      timeZone,
+      note,
       createdBy: req.user.name,
       reminders: [],
       ts: new Date()
     };
-    space.agenda.push(ev);
+
+    space.agenda.push(event);
     await space.save();
-    res.json(serializeAgendaEvent(ev, req.user._id));
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json(serializeAgendaEvent(event, req.user._id));
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.delete('/:spaceId/agenda/:evId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    space.agenda = space.agenda.filter(e => e.id !== req.params.evId);
+
+    const eventId = requiredString(req.params.evId, 'Evento invalido', { min: 3, max: 120 });
+    space.agenda = space.agenda.filter(event => event.id !== eventId);
     await space.save();
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json({ ok: true });
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
-// ====== NOTAS ======
 router.post('/:spaceId/notas', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const { title, body } = req.body;
-    const nota = { id: genId(), title: title||'', body: body||'', createdBy: req.user.name, date: new Date().toLocaleDateString('es-ES'), ts: new Date() };
-    space.notas.push(nota);
+
+    const body = ensureObject(req.body);
+    const title = optionalString(body.title, 'Titulo invalido', { max: 120 });
+    const noteBody = optionalString(body.body, 'Contenido invalido', { max: 5000 });
+    if (!title && !noteBody) return res.status(400).json({ error: 'La nota esta vacia' });
+
+    const note = {
+      id: genId(),
+      title,
+      body: noteBody,
+      createdBy: req.user.name,
+      date: new Date().toLocaleDateString('es-ES'),
+      ts: new Date()
+    };
+
+    space.notas.push(note);
     await space.save();
-    res.json(nota);
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json(note);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.put('/:spaceId/notas/:notaId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    const nota = space.notas.find(n => n.id === req.params.notaId);
-    if (!nota) return res.status(404).json({ error: 'No encontrada' });
-    nota.title = req.body.title || nota.title;
-    nota.body = req.body.body || nota.body;
-    nota.date = new Date().toLocaleDateString('es-ES');
+
+    const noteId = requiredString(req.params.notaId, 'Nota invalida', { min: 3, max: 120 });
+    const body = ensureObject(req.body);
+    const note = space.notas.find(entry => entry.id === noteId);
+
+    if (!note) return res.status(404).json({ error: 'No encontrada' });
+
+    const hasTitle = Object.prototype.hasOwnProperty.call(body, 'title');
+    const hasBody = Object.prototype.hasOwnProperty.call(body, 'body');
+    if (!hasTitle && !hasBody) return res.status(400).json({ error: 'Sin cambios validos' });
+
+    const nextTitle = hasTitle ? optionalString(body.title, 'Titulo invalido', { max: 120 }) : note.title;
+    const nextBody = hasBody ? optionalString(body.body, 'Contenido invalido', { max: 5000 }) : note.body;
+    if (!nextTitle && !nextBody) return res.status(400).json({ error: 'La nota esta vacia' });
+
+    note.title = nextTitle;
+    note.body = nextBody;
+    note.date = new Date().toLocaleDateString('es-ES');
+
     await space.save();
-    res.json(nota);
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json(note);
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 router.delete('/:spaceId/notas/:notaId', authMiddleware, async (req, res) => {
   try {
     const space = await getSpace(req.params.spaceId, req.user._id);
     if (!space) return res.status(403).json({ error: 'Sin acceso' });
-    space.notas = space.notas.filter(n => n.id !== req.params.notaId);
+
+    const noteId = requiredString(req.params.notaId, 'Nota invalida', { min: 3, max: 120 });
+    space.notas = space.notas.filter(note => note.id !== noteId);
     await space.save();
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: 'Error' }); }
+    return res.json({ ok: true });
+  } catch (e) {
+    if (e?.status) return safeError(res, e);
+    return res.status(500).json({ error: 'Error' });
+  }
 });
 
 module.exports = router;
